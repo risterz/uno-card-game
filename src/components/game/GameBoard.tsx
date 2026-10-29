@@ -777,7 +777,7 @@ export const GameBoard: React.FC = () => {
   }, [handCardCount]);
 
   return (
-    <div className="game-container">
+    <div className="game-container local-game-container">
       {/* 0. Card Flight Animation Layer (Top Layer) */}
       <CardFlightLayer
         flights={flights}
@@ -930,9 +930,9 @@ export const GameBoard: React.FC = () => {
       </div>
 
       {/* 2. Main Arena Table */}
-      <div className="game-arena">
-        {/* Opponents Row */}
-        <div className="opponents-row">
+      <div className="game-arena local-game-arena">
+        {/* Region 1: Opponents Row (Top of Table) */}
+        <div className="opponents-row local-opponents-row">
           {opponentPlayers.map(opp => {
             const isTurn =
               gameState.players[gameState.currentPlayerIndex].id === opp.id;
@@ -1008,9 +1008,9 @@ export const GameBoard: React.FC = () => {
           })}
         </div>
 
-        {/* Center Table Area: Draw Pile, Active Color Ring & Discard Pile */}
-        <div className="center-play-area">
-          <div className="center-table-console">
+        {/* Region 2: Center Table Area (Draw Pile, Active Color Ring & Discard Pile) */}
+        <div className="center-play-area local-center-play-area">
+          <div className="center-table-console local-center-table-console">
             {/* Draw Pile */}
             <div className="pile-container">
               <span className="pile-label">Draw Pile</span>
@@ -1063,11 +1063,11 @@ export const GameBoard: React.FC = () => {
           </div>
         </div>
 
-        {/* Human Player Hand Section (Dedicated Bottom Area) */}
-        <div className="human-hand-section">
+        {/* Region 3: Player status and action controls below central play area */}
+        <div className="local-player-status-region">
           {/* Hand Action Toolbar */}
           <div
-            className={`hand-toolbar ${isHumanTurn ? 'active-turn-toolbar' : ''}`}
+            className={`hand-toolbar local-hand-toolbar ${isHumanTurn ? 'active-turn-toolbar' : ''}`}
           >
             {/* Left: Player Profile & Turn Indicator */}
             <div className="hand-player-info">
@@ -1164,11 +1164,14 @@ export const GameBoard: React.FC = () => {
               )}
             </div>
           </div>
+        </div>
 
+        {/* Region 4: Player's hand anchored near bottom with sufficient space */}
+        <div className="human-hand-section local-player-hand-region">
           {/* Cards Hand Container with Dynamic Controlled Overlap & Smooth Motion */}
           <div
             id="human-hand-container"
-            className="hand-cards-container"
+            className="hand-cards-container local-hand-cards-container"
             style={
               {
                 '--hand-card-overlap': `${calculatedOverlap}px`,
