@@ -1,0 +1,161 @@
+/* Shared Card Design System Styles */
+
+:root {
+  --card-ratio: 240 / 336;
+  --card-radius: 14px;
+  
+  /* Colors */
+  --card-color-red: #E61938;
+  --card-color-blue: #0066E5;
+  --card-color-green: #00A852;
+  --card-color-yellow: #F5A600;
+  --card-color-wild: #1E1B2E;
+
+  /* Card Shadow & Elevations */
+  --shadow-card-flat: 0 4px 10px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-card-lift: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.18);
+  --shadow-card-glow-red: 0 0 24px rgba(230, 25, 56, 0.45);
+  --shadow-card-glow-blue: 0 0 24px rgba(0, 102, 229, 0.45);
+  --shadow-card-glow-green: 0 0 24px rgba(0, 168, 82, 0.45);
+  --shadow-card-glow-yellow: 0 0 24px rgba(245, 166, 0, 0.45);
+  --shadow-card-glow-wild: 0 0 24px rgba(168, 85, 247, 0.5);
+}
+
+/* Card Container with 3D Flip Perspective */
+.card-wrapper {
+  position: relative;
+  perspective: 1000px;
+  display: inline-block;
+  user-select: none;
+  cursor: pointer;
+  transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.24s ease;
+  will-change: transform;
+}
+
+.card-wrapper:hover:not(.non-interactive):not(.disabled) {
+  transform: translateY(-10px) scale(1.05);
+  z-index: 15;
+}
+
+.card-wrapper:active:not(.non-interactive):not(.disabled) {
+  transform: translateY(-2px) scale(0.98);
+}
+
+/* Flippable Card Inner Container */
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--card-radius);
+}
+
+.card-wrapper.flipped .card-inner {
+  transform: rotateY(180deg);
+}
+
+/* Card Faces */
+.card-face {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-card-flat);
+  transition: box-shadow 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+}
+
+.card-face.card-back-face {
+  transform: rotateY(180deg);
+}
+
+.card-wrapper:hover .card-face {
+  box-shadow: var(--shadow-card-lift);
+}
+
+/* Color Glow Overrides on Hover */
+.card-wrapper[data-color="red"]:hover .card-face {
+  box-shadow: var(--shadow-card-lift), var(--shadow-card-glow-red);
+}
+.card-wrapper[data-color="blue"]:hover .card-face {
+  box-shadow: var(--shadow-card-lift), var(--shadow-card-glow-blue);
+}
+.card-wrapper[data-color="green"]:hover .card-face {
+  box-shadow: var(--shadow-card-lift), var(--shadow-card-glow-green);
+}
+.card-wrapper[data-color="yellow"]:hover .card-face {
+  box-shadow: var(--shadow-card-lift), var(--shadow-card-glow-yellow);
+}
+.card-wrapper[data-color="wild"]:hover .card-face {
+  box-shadow: var(--shadow-card-lift), var(--shadow-card-glow-wild);
+}
+
+/* SVG Rendering */
+.card-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--card-radius);
+}
+
+/* Sizes */
+.card-size-sm {
+  width: 72px;
+  height: 100.8px;
+}
+
+.card-size-md {
+  width: 120px;
+  height: 168px;
+}
+
+.card-size-lg {
+  width: 180px;
+  height: 252px;
+}
+
+.card-size-xl {
+  width: 240px;
+  height: 336px;
+}
+
+.card-size-hand {
+  width: var(--hand-card-width, 104px);
+  height: var(--hand-card-height, 145.6px);
+}
+
+.card-size-responsive {
+  width: var(--hand-card-width, 104px);
+  height: var(--hand-card-height, 145.6px);
+  max-width: 240px;
+}
+
+/* Selected state */
+.card-wrapper.selected {
+  transform: translateY(-24px) scale(1.1);
+  z-index: 100 !important;
+}
+
+.card-wrapper.selected .card-face {
+  box-shadow: 0 0 0 3px #FFFFFF, 0 16px 32px rgba(0, 0, 0, 0.5), 0 0 24px rgba(56, 189, 248, 0.8), var(--shadow-card-lift);
+}
+
+.card-wrapper.non-interactive {
+  cursor: default;
+}
+
+/* Disabled state */
+.card-wrapper.disabled {
+  opacity: 0.9;
+  cursor: not-allowed;
+  transform: none;
+}

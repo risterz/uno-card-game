@@ -1,0 +1,233 @@
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import CardGallery from './components/CardGallery';
+import GameBoard from './components/game/GameBoard';
+import { Layers, ShieldCheck, Palette, BookOpen, Gamepad2 } from 'lucide-react';
+import { tabContentVariants } from './motion/motion-config';
+import './styles/cards.css';
+import './styles/gallery.css';
+
+export const App: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'game' | 'gallery' | 'specs' | 'rules'>('game');
+
+  return (
+    <div className="app-root">
+      {/* Top Navigation */}
+      <nav className="top-nav">
+        <div className="nav-brand">
+          <div className="brand-logo-badge">
+            <Gamepad2 className="brand-icon" size={18} />
+          </div>
+          <span className="brand-text">
+            <span className="brand-title-full">UNO Game & Design System</span>
+            <span className="brand-title-short">UNO</span>
+          </span>
+          <span className="brand-badge">
+            <span className="live-dot" />
+            Fully Playable
+          </span>
+        </div>
+        <div className="nav-tabs-wrapper">
+          <div className="nav-tabs" role="tablist">
+            <button
+              className={`nav-tab ${activeTab === 'game' ? 'active' : ''}`}
+              onClick={() => setActiveTab('game')}
+              role="tab"
+              aria-selected={activeTab === 'game'}
+            >
+              <Gamepad2 size={15} className="nav-tab-icon" />
+              <span className="tab-label-full">Play Game</span>
+              <span className="tab-label-short">Game</span>
+            </button>
+            <button
+              className={`nav-tab ${activeTab === 'gallery' ? 'active' : ''}`}
+              onClick={() => setActiveTab('gallery')}
+              role="tab"
+              aria-selected={activeTab === 'gallery'}
+            >
+              <Layers size={15} className="nav-tab-icon" />
+              <span className="tab-label-full">108-Card Deck</span>
+              <span className="tab-label-short">Cards</span>
+            </button>
+            <button
+              className={`nav-tab ${activeTab === 'specs' ? 'active' : ''}`}
+              onClick={() => setActiveTab('specs')}
+              role="tab"
+              aria-selected={activeTab === 'specs'}
+            >
+              <Palette size={15} className="nav-tab-icon" />
+              <span className="tab-label-full">Design Specs</span>
+              <span className="tab-label-short">Specs</span>
+            </button>
+            <button
+              className={`nav-tab ${activeTab === 'rules' ? 'active' : ''}`}
+              onClick={() => setActiveTab('rules')}
+              role="tab"
+              aria-selected={activeTab === 'rules'}
+            >
+              <BookOpen size={15} className="nav-tab-icon" />
+              <span className="tab-label-full">Rules & Engine</span>
+              <span className="tab-label-short">Rules</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content Area */}
+      <main>
+        <AnimatePresence mode="wait">
+          {activeTab === 'game' && (
+            <motion.div
+              key="game"
+              variants={tabContentVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <GameBoard />
+            </motion.div>
+          )}
+
+          {activeTab === 'gallery' && (
+            <motion.div
+              key="gallery"
+              variants={tabContentVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <CardGallery />
+            </motion.div>
+          )}
+
+          {activeTab === 'specs' && (
+            <motion.div
+              key="specs"
+              variants={tabContentVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="gallery-container specs-container"
+            >
+              <header className="gallery-header">
+                <div className="header-badge">
+                  <ShieldCheck size={16} /> Design System Specifications
+                </div>
+                <h1 className="header-title">Card Geometry & Visual Architecture</h1>
+                <p className="header-subtitle">
+                  Mathematical dimensions, color harmony, typography tokens, and responsive scaling specifications for the browser-based card game.
+                </p>
+              </header>
+
+              <div className="specs-grid">
+                {/* Card Dimensions Card */}
+                <div className="spec-card">
+                  <h3>Card Dimensions & ViewBox</h3>
+                  <ul>
+                    <li><strong>Canvas Width:</strong> 240px</li>
+                    <li><strong>Canvas Height:</strong> 336px</li>
+                    <li><strong>Aspect Ratio:</strong> 5:7 (0.7142)</li>
+                    <li><strong>Corner Radius:</strong> 18px outer, 14px inner</li>
+                    <li><strong>SVG viewBox:</strong> <code>0 0 240 336</code></li>
+                    <li><strong>Physical Border:</strong> 8px crisp white outer margin</li>
+                  </ul>
+                </div>
+
+                {/* Color System Card */}
+                <div className="spec-card">
+                  <h3>Color Palette Tokens</h3>
+                  <ul>
+                    <li><span className="spec-swatch" style={{ background: '#E61938' }} /><strong>Red:</strong> <code>#E61938</code> (Gradients: #FF3358 to #BA0D28)</li>
+                    <li><span className="spec-swatch" style={{ background: '#0066E5' }} /><strong>Blue:</strong> <code>#0066E5</code> (Gradients: #1E88FF to #0047B8)</li>
+                    <li><span className="spec-swatch" style={{ background: '#00A852' }} /><strong>Green:</strong> <code>#00A852</code> (Gradients: #10C865 to #00853E)</li>
+                    <li><span className="spec-swatch" style={{ background: '#F5A600' }} /><strong>Yellow:</strong> <code>#F5A600</code> (Gradients: #FFBF1A to #D98200)</li>
+                    <li><span className="spec-swatch" style={{ background: '#1E1B2E' }} /><strong>Wild / Dark:</strong> <code>#1E1B2E</code> (Gradients: #2F2B48 to #13111F)</li>
+                  </ul>
+                </div>
+
+                {/* Layout System Card */}
+                <div className="spec-card">
+                  <h3>Template Rules & Layout</h3>
+                  <ul>
+                    <li><strong>Central Badge:</strong> Ellipse rotated at -24° (rx=84, ry=58 at 120, 168)</li>
+                    <li><strong>Top-Left Corner:</strong> Positioned at <code>(30, 36)</code>, scaled ~28px</li>
+                    <li><strong>Bottom-Right Corner:</strong> Positioned at <code>(210, 300)</code> with 180° rotation</li>
+                    <li><strong>Numeral Ambiguity Prevention:</strong> Numbers 6 and 9 feature standard underline bars (88px to 152px at y=222px)</li>
+                    <li><strong>Drop Shadows:</strong> Gaussian blur <code>feDropShadow</code> filters baked into vector code</li>
+                  </ul>
+                </div>
+
+                {/* Strict Inventory Breakdown */}
+                <div className="spec-card">
+                  <h3>Standard 108-Card Inventory</h3>
+                  <ul>
+                    <li><strong>76 Number Cards:</strong> 1x 0 card + 2x (1-9) per each of the 4 colors</li>
+                    <li><strong>24 Colored Action Cards:</strong> 2x Skip + 2x Reverse + 2x Draw Two per color</li>
+                    <li><strong>8 Wild Cards:</strong> 4x Wild + 4x Wild Draw Four</li>
+                    <li><strong>Total Inventory:</strong> Exactly 108 cards, verified by automated unit tests</li>
+                  </ul>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'rules' && (
+            <motion.div
+              key="rules"
+              variants={tabContentVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="gallery-container integration-container"
+            >
+              <header className="gallery-header">
+                <div className="header-badge">
+                  <BookOpen size={16} /> Official Rules & Game Architecture
+                </div>
+                <h1 className="header-title">Implemented Game Ruleset & Logic</h1>
+                <p className="header-subtitle">
+                  Clear documentation of game mechanics, action card behaviors, and turn flow implemented in the pure TypeScript engine.
+                </p>
+              </header>
+
+              <div className="specs-grid">
+                <div className="spec-card">
+                  <h3>Action Cards Effects</h3>
+                  <ul>
+                    <li><strong>Skip:</strong> Next player loses their turn.</li>
+                    <li><strong>Reverse:</strong> Direction flips between Clockwise (1) and Counter-Clockwise (-1). In a 2-player match, Reverse acts as a Skip.</li>
+                    <li><strong>Draw Two (+2):</strong> Next player draws 2 cards from draw pile and loses their turn.</li>
+                    <li><strong>Wild:</strong> Universal match. Player selects active table color (Red, Blue, Green, Yellow).</li>
+                    <li><strong>Wild Draw Four (+4):</strong> Universal match. Player chooses active color; next player draws 4 cards and loses their turn.</li>
+                  </ul>
+                </div>
+
+                <div className="spec-card">
+                  <h3>Turn & Draw Pile Mechanics</h3>
+                  <ul>
+                    <li><strong>Playability:</strong> Matches active color, matches face symbol/number, or is Wild.</li>
+                    <li><strong>Card Drawing:</strong> If drawn card is playable, player gets the choice to play it immediately or pass.</li>
+                    <li><strong>Draw Pile Recycling:</strong> When draw pile is empty, all cards from the discard pile except the top card are shuffled into a fresh draw pile.</li>
+                    <li><strong>UNO Declaration:</strong> Player must call UNO when holding 1 card. If caught by an opponent, player draws 2 penalty cards.</li>
+                  </ul>
+                </div>
+
+                <div className="spec-card">
+                  <h3>Game Modes & AI Features</h3>
+                  <ul>
+                    <li><strong>Solo vs AI:</strong> 1 human player competing against 1 to 3 autonomous bot players.</li>
+                    <li><strong>Local Pass & Play:</strong> 2 to 4 human players sharing one screen with privacy shields between turns.</li>
+                    <li><strong>AI Bot Difficulties:</strong> Easy (casual/random), Medium (color-strategic), Hard (opponent hand size counter, card saving, aggressive UNO catch).</li>
+                    <li><strong>Scoring:</strong> Winner scores points equal to the sum of remaining cards in all opponents' hands (Numbers: face value, Actions: 20 pts, Wilds: 50 pts).</li>
+                  </ul>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
+    </div>
+  );
+};
+
+export default App;

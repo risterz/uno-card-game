@@ -1,0 +1,320 @@
+/* Premium Game Motion & Animation Styles */
+
+/* 1. Playable Card Breathing Glow */
+@keyframes playable-glow-float {
+  0% {
+    transform: translateY(-8px);
+    box-shadow: 0 0 0 2.5px #38BDF8, 0 8px 18px rgba(56, 189, 248, 0.45);
+  }
+  50% {
+    transform: translateY(-13px);
+    box-shadow: 0 0 0 3px #7DD3FC, 0 12px 26px rgba(56, 189, 248, 0.7);
+  }
+  100% {
+    transform: translateY(-8px);
+    box-shadow: 0 0 0 2.5px #38BDF8, 0 8px 18px rgba(56, 189, 248, 0.45);
+  }
+}
+
+.hand-card-wrapper.is-playable.breathing {
+  animation: playable-glow-float 2.4s ease-in-out infinite;
+}
+
+.hand-card-wrapper.is-playable.breathing:hover {
+  animation: none;
+}
+
+/* 2. Discard Landing Shockwave Impact */
+@keyframes landing-shockwave {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.9;
+    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.8), 0 0 20px rgba(255, 255, 255, 0.9);
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.7;
+    box-shadow: 0 0 0 16px rgba(56, 189, 248, 0.4), 0 0 35px rgba(56, 189, 248, 0.6);
+  }
+  100% {
+    transform: scale(1.15);
+    opacity: 0;
+    box-shadow: 0 0 0 32px rgba(56, 189, 248, 0), 0 0 50px rgba(56, 189, 248, 0);
+  }
+}
+
+.discard-impact-ring {
+  position: absolute;
+  inset: -12px;
+  border-radius: 20px;
+  border: 2px solid #38BDF8;
+  pointer-events: none;
+  animation: landing-shockwave 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  z-index: 50;
+}
+
+.discard-pile-wrapper.landed {
+  animation: discard-thud 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes discard-thud {
+  0% { transform: scale(1.18) rotate(-4deg); }
+  60% { transform: scale(0.96) rotate(-1deg); }
+  100% { transform: scale(1) rotate(-2.5deg); }
+}
+
+/* 3. Card Flight Layer */
+.card-flight-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.flying-card-element {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.6));
+  pointer-events: none;
+}
+
+/* 4. Action Card & Game Notification Overlays (Compact, Non-blocking Toasts) */
+.action-effect-overlay {
+  position: fixed;
+  top: 66px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none !important;
+  z-index: 8000;
+  max-width: 92vw;
+}
+
+/* Base Pill Toast Styling */
+.action-banner-skip,
+.action-banner-reverse,
+.action-banner-draw,
+.action-banner-wild4,
+.action-banner-uno,
+.action-banner-caught {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 18px;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  pointer-events: none !important;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.banner-title {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.banner-subtitle {
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 2px;
+  opacity: 0.95;
+  line-height: 1;
+}
+
+/* Skip Banner */
+.action-banner-skip {
+  background: linear-gradient(135deg, rgba(230, 25, 56, 0.96), rgba(186, 13, 40, 0.96));
+  box-shadow: 0 4px 18px rgba(230, 25, 56, 0.5), 0 8px 24px rgba(0, 0, 0, 0.4);
+  color: #FFFFFF;
+}
+
+/* Reverse Dual Arrow Spinner */
+.action-banner-reverse {
+  background: linear-gradient(135deg, rgba(0, 102, 229, 0.96), rgba(2, 60, 134, 0.96));
+  border-color: #38BDF8;
+  box-shadow: 0 4px 18px rgba(0, 102, 229, 0.5), 0 8px 24px rgba(0, 0, 0, 0.4);
+  color: #FFFFFF;
+}
+
+.reverse-arrows-spin {
+  animation: spin-reverse 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes spin-reverse {
+  0% { transform: rotate(0deg) scale(0.7); }
+  60% { transform: rotate(270deg) scale(1.15); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* Draw Two Banner */
+.action-banner-draw {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4);
+  color: #0F172A;
+}
+
+.action-banner-draw .banner-subtitle {
+  color: #451A03;
+}
+
+/* Wild & Wild Draw Four Banner */
+.action-banner-wild4 {
+  background: linear-gradient(135deg, #FF1744 0%, #FF9100 25%, #00E676 50%, #2979FF 75%, #D500F9 100%);
+  box-shadow: 0 4px 22px rgba(255, 255, 255, 0.5), 0 8px 24px rgba(0, 0, 0, 0.4);
+  color: #FFFFFF;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* UNO Toast */
+.action-banner-uno {
+  background: linear-gradient(135deg, #FF0844 0%, #FF4E50 100%);
+  box-shadow: 0 4px 20px rgba(255, 8, 68, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4);
+  color: #FFFFFF;
+}
+
+/* Caught Toast */
+.action-banner-caught {
+  background: linear-gradient(135deg, #991B1B 0%, #DC2626 100%);
+  border-color: #F87171;
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.7), 0 8px 24px rgba(0, 0, 0, 0.4);
+  color: #FFFFFF;
+}
+
+/* 5. UNO Celebration Overlay */
+.uno-celebration-container {
+  position: fixed;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none !important;
+  z-index: 8500;
+}
+
+.uno-celebration-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 56px;
+  background: linear-gradient(135deg, #FF0844 0%, #FFB199 100%);
+  border: 4px solid #FFFFFF;
+  border-radius: 36px;
+  box-shadow: 0 0 60px rgba(255, 8, 68, 0.85), 0 25px 60px rgba(0, 0, 0, 0.7);
+  transform-origin: center center;
+}
+
+.uno-badge-text {
+  font-size: 64px;
+  font-weight: 1000;
+  font-style: italic;
+  color: #FFFFFF;
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.uno-badge-subtitle {
+  font-size: 16px;
+  font-weight: 800;
+  color: #FFF1F2;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* 6. AI Opponent Thinking Indicator */
+.ai-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #38BDF8;
+  margin-top: 2px;
+}
+
+.thinking-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.thinking-dots span {
+  width: 4px;
+  height: 4px;
+  background: #38BDF8;
+  border-radius: 50%;
+  animation: bounce-dot 1s infinite ease-in-out both;
+}
+
+.thinking-dots span:nth-child(1) { animation-delay: -0.32s; }
+.thinking-dots span:nth-child(2) { animation-delay: -0.16s; }
+.thinking-dots span:nth-child(3) { animation-delay: 0s; }
+
+@keyframes bounce-dot {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
+  40% { transform: scale(1.1); opacity: 1; }
+}
+
+/* 7. Victory Banner */
+.victory-celebration-container {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 12, 28, 0.85);
+  backdrop-filter: blur(10px);
+  z-index: 9500;
+}
+
+.victory-card {
+  position: relative;
+  width: 90%;
+  max-width: 520px;
+  padding: 36px 28px;
+  background: linear-gradient(145deg, #1E1B2E 0%, #0F172A 100%);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 28px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 50px rgba(245, 166, 0, 0.35);
+  text-align: center;
+  overflow: hidden;
+}
+
+.victory-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(245, 166, 0, 0.15) 0%, transparent 65%);
+  pointer-events: none;
+  animation: sunburst-spin 20s linear infinite;
+}
+
+@keyframes sunburst-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 8. Reduced Motion Overrides */
+@media (prefers-reduced-motion: reduce) {
+  .hand-card-wrapper.is-playable.breathing,
+  .direction-icon,
+  .reverse-arrows-spin,
+  .uno-shout-btn.pulse-ready,
+  .turn-pill,
+  .opponent-uno-badge,
+  .catch-uno-btn,
+  .thinking-dots span,
+  .victory-card::before {
+    animation: none !important;
+  }
+}
