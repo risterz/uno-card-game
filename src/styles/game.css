@@ -437,8 +437,10 @@
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
-  margin-bottom: 2px;
+  margin-bottom: clamp(14px, 2vh, 22px);
   gap: 12px;
+  position: relative;
+  z-index: 5;
 }
 
 .hand-toolbar.active-turn-toolbar {
@@ -546,9 +548,11 @@
   max-width: 100%;
   overflow-x: auto;
   overflow-y: visible;
-  padding: 26px 20px 8px 20px;
+  padding: clamp(28px, 3.8vh, 36px) 20px clamp(6px, 1vh, 10px) 20px;
   min-height: calc(var(--hand-card-height) + 36px);
   scroll-behavior: smooth;
+  position: relative;
+  z-index: 10;
 }
 
 /* Custom Scrollbar for Hand */
@@ -617,11 +621,11 @@
 
 /* Selected Card Raised High with Spacing */
 .hand-card-wrapper.is-selected {
-  transform: translateY(-34px) scale(1.12) !important;
+  transform: translateY(-20px) scale(1.08) !important;
   opacity: 1 !important;
   filter: none !important;
-  margin-right: 14px;
-  margin-left: calc(var(--hand-card-overlap) + 14px);
+  margin-right: 10px;
+  margin-left: calc(var(--hand-card-overlap) + 10px);
   z-index: 150 !important;
 }
 
@@ -846,10 +850,16 @@
     flex-wrap: wrap;
     gap: 6px;
     padding: 4px 8px;
+    margin-bottom: 14px;
   }
   .hand-cards-container {
-    padding: 20px 10px 4px 10px;
+    padding: 24px 10px 4px 10px;
     justify-content: flex-start; /* Clean swipe/scroll on mobile */
+  }
+  .hand-card-wrapper.is-selected {
+    transform: translateY(-16px) scale(1.06) !important;
+    margin-right: 6px;
+    margin-left: calc(var(--hand-card-overlap) + 6px);
   }
 }
 
