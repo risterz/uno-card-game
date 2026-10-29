@@ -215,6 +215,7 @@ describe('Game State & Action Cards', () => {
     const state = createInitialGameState({ playerCount: 4, gameMode: 'ai', aiDifficulty: 'medium' });
     state.discardPile = [topCard];
     state.activeColor = 'red';
+    state.direction = 1;
     state.currentPlayerIndex = 0;
     state.players[0].hand = [wild4, createMockCard('blue', '1')];
     const victimHandCount = state.players[1].hand.length;

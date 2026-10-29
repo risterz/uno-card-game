@@ -39,14 +39,14 @@ export function createInitialGameState(
   customDeck?: CardDefinition[],
   rng = Math.random
 ): GameState {
-  const playerCount = Math.max(2, Math.min(4, settings.playerCount));
+  const playerCount = Math.max(2, Math.min(5, settings.playerCount));
   const players: Player[] = [];
 
   for (let i = 0; i < playerCount; i++) {
     const isHuman = settings.gameMode === 'pass_and_play' || i === 0;
     const name = isHuman
       ? (settings.gameMode === 'pass_and_play' ? `Player ${i + 1}` : 'You')
-      : `Bot ${['Nova', 'Orion', 'Luna'][i - 1] || `${i + 1}`}`;
+      : `Bot ${['Nova', 'Orion', 'Luna', 'Sol'][i - 1] || `${i + 1}`}`;
 
     players.push({
       id: `p${i + 1}`,

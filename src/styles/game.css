@@ -1006,33 +1006,210 @@
   padding: var(--arena-pad-top) 16px var(--arena-pad-bottom) 16px;
 }
 
-/* Region 1: Opponent panels at the top */
+/* Region 1: Opponent panels at the top (Clean Responsive Grid) */
 .local-opponents-row {
   flex-shrink: 0;
   width: 100%;
-  display: flex;
+  max-width: min(100%, calc(var(--opponent-count, 3) * 170px + (var(--opponent-count, 3) - 1) * 16px));
+  margin: 0 auto var(--gap-opp-to-center) auto;
+  display: grid;
+  grid-template-columns: repeat(var(--opponent-count, 3), minmax(0, 1fr));
+  gap: clamp(8px, 1.4vw, 16px);
+  align-items: stretch;
   justify-content: center;
-  align-items: center;
-  gap: 12px;
+  box-sizing: border-box;
   z-index: 5;
-  margin-bottom: var(--gap-opp-to-center);
   min-height: auto;
 }
 
-.local-opponents-row .opponent-pod {
-  padding: clamp(3px, 0.6vh, 6px) clamp(8px, 1.2vw, 12px);
-  min-width: clamp(84px, 9vw, 110px);
+.local-opponent-pod {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: stretch;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  transition: border-color 0.22s ease, box-shadow 0.22s ease;
 }
 
-.local-opponents-row .opponent-cards-visual {
-  height: clamp(24px, 3.6vh, 34px);
+.local-opponent-pod.active-turn {
+  border-color: #38BDF8;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+  background: rgba(15, 23, 42, 0.96);
+  transform: none !important;
+}
+
+/* Header */
+.local-opponent-pod .opponent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.local-opponent-pod .opponent-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.local-opponent-pod .opponent-avatar {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.local-opponent-pod .opponent-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #F8FAFC;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.local-opponent-pod .opponent-cards-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 7px;
+  background: rgba(30, 41, 59, 0.95);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #38BDF8;
+  flex-shrink: 0;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+/* Status */
+.local-opponent-pod .opponent-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 16px;
+  margin: 2px 0 4px 0;
+  overflow: hidden;
+}
+
+.local-opponent-pod .opponent-difficulty-tag {
+  font-size: 9px;
+  font-weight: 700;
+  color: #94A3B8;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.local-opponent-pod .ai-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #38BDF8;
+  white-space: nowrap;
+}
+
+.local-opponent-pod .ai-status-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 65px;
+}
+
+.local-opponent-pod .opponent-turn-pill {
+  font-size: 9px;
+  font-weight: 800;
+  color: #38BDF8;
+  background: rgba(56, 189, 248, 0.15);
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+
+.local-opponent-pod .opponent-uno-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  background: #E61938;
+  color: #FFFFFF;
+  border: 1px solid #FFFFFF;
+  border-radius: 9999px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  box-shadow: 0 0 8px rgba(230, 25, 56, 0.6);
+  animation: pulse-badge 1s infinite alternate;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* Hand Preview */
+.local-opponent-pod .opponent-cards-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 32px;
   margin-top: 2px;
+  overflow: visible;
 }
 
-.local-opponents-row .mini-card-back {
-  width: clamp(18px, 2.6vh, 25px);
-  height: clamp(24px, 3.6vh, 34px);
-  margin-left: clamp(-15px, -1.8vh, -17px);
+.local-opponent-pod .mini-card-back {
+  width: 20px;
+  height: 28px;
+  margin-left: -12px;
+  border-radius: 3.5px;
+  overflow: hidden;
+  box-shadow: -1px 2px 5px rgba(0, 0, 0, 0.45);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.local-opponent-pod .mini-card-back:first-child {
+  margin-left: 0;
+}
+
+.local-opponent-pod .catch-uno-btn {
+  width: 100%;
+  margin-top: 4px;
+  padding: 3px 6px;
+  background: #E61938;
+  border: 1px solid #FF5A79;
+  border-radius: 6px;
+  color: #FFFFFF;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  animation: shake-attention 1.2s infinite ease-in-out;
 }
 
 /* Region 2: Draw pile, discard pile, and active-color indicator in the center */
@@ -1254,50 +1431,94 @@
     --arena-pad-bottom: clamp(14px, 2vh, 20px);
   }
 
-  /* Region 1: Opponents Row */
+  /* Region 1: Opponents Row (Mobile Clean Grid) */
   .local-opponents-row {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: repeat(var(--opponent-count, 3), minmax(0, 1fr));
     gap: 6px;
+    padding: 0 2px;
     margin-bottom: var(--gap-opp-to-center);
   }
 
-  .local-opponents-row .opponent-pod {
-    padding: 3px 6px;
-    min-width: 58px;
-    max-width: 92px;
+  .local-opponent-pod {
+    padding: 5px 6px;
     border-radius: 10px;
   }
 
-  .local-opponents-row .opponent-avatar {
+  .local-opponent-pod .opponent-header {
+    gap: 3px;
+    margin-bottom: 1px;
+  }
+
+  .local-opponent-pod .opponent-header-left {
+    gap: 4px;
+  }
+
+  .local-opponent-pod .opponent-avatar {
     font-size: 13px;
   }
 
-  .local-opponents-row .opponent-name {
-    font-size: 10px;
-    max-width: 52px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .local-opponent-pod .opponent-name {
+    font-size: 10.5px;
+    line-height: 1.15;
   }
 
-  .local-opponents-row .opponent-difficulty-tag {
-    display: none;
-  }
-
-  .local-opponents-row .opponent-cards-badge {
-    font-size: 9px;
+  .local-opponent-pod .opponent-cards-badge {
+    font-size: 9.5px;
     padding: 1px 4px;
   }
 
-  .local-opponents-row .opponent-cards-visual {
-    height: 18px;
-    margin-top: 2px;
+  /* Compact card count: hide 'cards' text on mobile so number never clips */
+  .local-opponents-row .cards-text {
+    display: none;
   }
 
-  .local-opponents-row .mini-card-back {
-    width: 14px;
-    height: 20px;
-    margin-left: -10px;
+  .local-opponent-pod .opponent-status-row {
+    min-height: 13px;
+    margin: 1px 0 2px 0;
+  }
+
+  .local-opponent-pod .opponent-difficulty-tag {
+    font-size: 8px;
+    padding: 0 3px;
     border-radius: 3px;
+  }
+
+  .local-opponent-pod .ai-status-indicator {
+    font-size: 8.5px;
+    gap: 2px;
+  }
+
+  .local-opponent-pod .ai-status-text {
+    max-width: 44px;
+  }
+
+  .local-opponent-pod .opponent-turn-pill {
+    font-size: 8px;
+    padding: 0 3px;
+  }
+
+  .local-opponent-pod .opponent-uno-badge {
+    font-size: 8px;
+    padding: 0 4px;
+  }
+
+  .local-opponent-pod .opponent-cards-visual {
+    height: 22px;
+    margin-top: 1px;
+  }
+
+  .local-opponent-pod .mini-card-back {
+    width: 15px;
+    height: 21px;
+    margin-left: -9px;
+    border-radius: 2.5px;
+  }
+
+  .local-opponent-pod .catch-uno-btn {
+    font-size: 8px;
+    padding: 2px 3px;
   }
 
   /* Region 2: Central Play Area */

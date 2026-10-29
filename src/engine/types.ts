@@ -28,7 +28,7 @@ export interface LogEntry {
 }
 
 export interface GameSettings {
-  playerCount: number; // 2 to 4
+  playerCount: number; // 2 to 5
   gameMode: GameMode;
   aiDifficulty: AIDifficulty;
 }

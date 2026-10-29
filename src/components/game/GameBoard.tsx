@@ -935,6 +935,7 @@ export const GameBoard: React.FC = () => {
           {/* Match Setup */}
           <button
             className="game-btn primary"
+            data-testid="match-setup-btn"
             onClick={() => {
               setSettings(gameState.settings);
               setShowSettingsModal(true);
@@ -957,73 +958,99 @@ export const GameBoard: React.FC = () => {
       {/* 2. Main Arena Table */}
       <div className="game-arena local-game-arena">
         {/* Region 1: Opponents Row (Top of Table) */}
-        <div className="opponents-row local-opponents-row">
+        <div
+          className="opponents-row local-opponents-row"
+          style={
+            {
+              '--opponent-count': opponentPlayers.length,
+            } as React.CSSProperties
+          }
+        >
           {opponentPlayers.map(opp => {
             const isTurn =
               gameState.players[gameState.currentPlayerIndex].id === opp.id;
             const hasUnoDanger = opp.hand.length === 1 && !opp.unoDeclared;
             const statusText = botStatus[opp.id];
+            const maxCards =
+              windowWidth < 400 && opponentPlayers.length >= 4
+                ? 3
+                : windowWidth < 600
+                  ? 4
+                  : 5;
+            const previewCardCount = Math.min(opp.hand.length, maxCards);
 
             return (
               <div
                 key={opp.id}
                 id={`opponent-pod-${opp.id}`}
-                className={`opponent-pod ${isTurn ? 'active-turn' : ''}`}
+                className={`opponent-pod local-opponent-pod ${isTurn ? 'active-turn' : ''}`}
+                data-testid={`opponent-pod-${opp.id}`}
               >
+                {/* 1. Header: Avatar & Name on left, Card count badge on right */}
                 <div className="opponent-header">
-                  <span className="opponent-avatar">{opp.avatar}</span>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span className="opponent-name">{opp.name}</span>
-                    {opp.isAI && (
-                      <span className="opponent-difficulty-tag">
-                        {gameState.settings.aiDifficulty.toUpperCase()}
-                      </span>
-                    )}
+                  <div className="opponent-header-left">
+                    <span className="opponent-avatar">{opp.avatar}</span>
+                    <span className="opponent-name" title={opp.name}>
+                      {opp.name}
+                    </span>
                   </div>
-                  <span className="opponent-cards-badge">
-                    {opp.hand.length} cards
+                  <span
+                    className="opponent-cards-badge"
+                    title={`${opp.hand.length} cards`}
+                    data-testid={`opponent-cards-badge-${opp.id}`}
+                  >
+                    <span className="badge-count">{opp.hand.length}</span>
+                    <span className="cards-text">&nbsp;cards</span>
                   </span>
                 </div>
 
-                {/* AI Thinking/Status Indicator */}
-                {isTurn && opp.isAI && (
-                  <div className="ai-status-indicator">
-                    <span>{statusText || 'Thinking'}</span>
-                    <span className="thinking-dots">
-                      <span />
-                      <span />
-                      <span />
+                {/* 2. Status: AI Thinking or Difficulty / UNO on separate line */}
+                <div className="opponent-status-row">
+                  {isTurn && opp.isAI ? (
+                    <div className="ai-status-indicator">
+                      <span className="ai-status-text">
+                        {statusText || 'Thinking'}
+                      </span>
+                      <span className="thinking-dots">
+                        <span />
+                        <span />
+                        <span />
+                      </span>
+                    </div>
+                  ) : isTurn ? (
+                    <span className="opponent-turn-pill">Turn</span>
+                  ) : opp.isAI ? (
+                    <span className="opponent-difficulty-tag">
+                      {gameState.settings.aiDifficulty.toUpperCase()}
                     </span>
-                  </div>
-                )}
+                  ) : (
+                    <span className="opponent-difficulty-tag">HUMAN</span>
+                  )}
 
-                {/* Visual miniature cards fan */}
+                  {/* UNO call badge */}
+                  {opp.hand.length === 1 && opp.unoDeclared && (
+                    <span className="opponent-uno-badge">UNO!</span>
+                  )}
+                </div>
+
+                {/* 3. Hand preview: Row of small face-down card backs */}
                 <div className="opponent-cards-visual">
-                  {opp.hand.slice(0, 7).map((card, idx) => (
+                  {Array.from({ length: previewCardCount }).map((_, idx) => (
                     <div
-                      key={`${card.id}-${idx}`}
+                      key={`opp-card-${opp.id}-${idx}`}
                       className="mini-card-back"
                     >
                       <CardBack size="sm" interactive={false} />
                     </div>
                   ))}
-                  {opp.hand.length > 7 && (
-                    <span className="opponent-cards-badge">
-                      +{opp.hand.length - 7}
-                    </span>
-                  )}
                 </div>
-
-                {/* UNO call badge */}
-                {opp.hand.length === 1 && opp.unoDeclared && (
-                  <div className="opponent-uno-badge">UNO!</div>
-                )}
 
                 {/* Catch UNO button when opponent forgot */}
                 {hasUnoDanger && isHumanTurn && (
                   <button
                     className="catch-uno-btn"
                     onClick={() => handleCatchUno(opp.id)}
+                    title="Catch opponent before they call UNO!"
                   >
                     🚨 CATCH UNO!
                   </button>
@@ -1403,11 +1430,12 @@ export const GameBoard: React.FC = () => {
                     className="button-group"
                     style={{ width: '100%', display: 'flex' }}
                   >
-                    {[2, 3, 4].map(num => (
+                    {[2, 3, 4, 5].map(num => (
                       <button
                         key={num}
                         className={`toggle-btn ${settings.playerCount === num ? 'active' : ''}`}
                         style={{ flex: 1 }}
+                        data-testid={`player-count-btn-${num}`}
                         onClick={() =>
                           setSettings(s => ({ ...s, playerCount: num }))
                         }
@@ -1489,6 +1517,7 @@ export const GameBoard: React.FC = () => {
                   <button
                     className="action-btn primary"
                     style={{ flex: 1, justifyContent: 'center' }}
+                    data-testid="start-new-match-btn"
                     onClick={() => handleRestartGame(settings)}
                   >
                     Start New Match
