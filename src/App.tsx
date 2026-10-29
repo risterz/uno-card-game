@@ -1,14 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import CardGallery from './components/CardGallery';
 import GameBoard from './components/game/GameBoard';
-import { Layers, ShieldCheck, Palette, BookOpen, Gamepad2 } from 'lucide-react';
+import { MultiplayerView } from './components/multiplayer/MultiplayerView';
+import { Layers, ShieldCheck, Palette, BookOpen, Gamepad2, Users } from 'lucide-react';
 import { tabContentVariants } from './motion/motion-config';
 import './styles/cards.css';
 import './styles/gallery.css';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'game' | 'gallery' | 'specs' | 'rules'>('game');
+  const [activeTab, setActiveTab] = useState<'game' | 'online' | 'gallery' | 'specs' | 'rules'>('game');
+
+  // Auto-switch to Online tab if shareable invite link clicked
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('room')) {
+        setActiveTab('online');
+      }
+    }
+  }, []);
 
   return (
     <div className="app-root">
@@ -34,10 +45,22 @@ export const App: React.FC = () => {
               onClick={() => setActiveTab('game')}
               role="tab"
               aria-selected={activeTab === 'game'}
+              data-testid="nav-tab-local"
             >
               <Gamepad2 size={15} className="nav-tab-icon" />
-              <span className="tab-label-full">Play Game</span>
-              <span className="tab-label-short">Game</span>
+              <span className="tab-label-full">Play Local</span>
+              <span className="tab-label-short">Local</span>
+            </button>
+            <button
+              className={`nav-tab ${activeTab === 'online' ? 'active' : ''}`}
+              onClick={() => setActiveTab('online')}
+              role="tab"
+              aria-selected={activeTab === 'online'}
+              data-testid="nav-tab-online"
+            >
+              <Users size={15} className="nav-tab-icon" />
+              <span className="tab-label-full">Online Play</span>
+              <span className="tab-label-short">Online</span>
             </button>
             <button
               className={`nav-tab ${activeTab === 'gallery' ? 'active' : ''}`}
@@ -85,6 +108,18 @@ export const App: React.FC = () => {
               exit="exit"
             >
               <GameBoard />
+            </motion.div>
+          )}
+
+          {activeTab === 'online' && (
+            <motion.div
+              key="online"
+              variants={tabContentVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <MultiplayerView />
             </motion.div>
           )}
 

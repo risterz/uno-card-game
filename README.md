@@ -99,9 +99,59 @@ npm test
 # 2. Run 8-point deck inventory & geometry validation
 npm run validate:deck
 
-# 3. Start local development server
+# 3. Start authoritative Socket.IO multiplayer backend
+npm run server
+
+# 4. Start local development frontend
 npm run dev
 
-# 4. Production build
+# 5. Run full multi-browser multiplayer integration suite
+node scripts/verify-multiplayer-full.cjs
+
+# 6. Production build
 npm run build
 ```
+
+---
+
+## 🌐 Real-Time Online Multiplayer
+
+### Architecture & Security
+- **Authoritative Backend (`server/`):** Node.js Socket.IO server manages canonical game state, deck dealing, turn transitions, and rules enforcement.
+- **Hand Privacy & Zero Leakage:** Opponent card identities are never transmitted over the network. Clients receive sanitized public player metadata with card counts only.
+- **Unpredictable Room Codes:** Cryptographically randomized 6-character room codes (e.g. `HJH28K`) avoiding ambiguous characters.
+- **Shareable Invite Links:** One-click copyable invite URLs (`?room=XYZ`) automatically orient guest players into the target room.
+- **Session Tokens & Auto-Reconnect:** Secure session tokens in `sessionStorage` allow players to recover active matches upon browser refresh or transient disconnects.
+- **Rate-Limiting & Move Validation:** Prevents out-of-turn moves, illegal cards, malformed payloads, or event flooding.
+
+### Environment Variables
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `VITE_SERVER_URL` | `http://localhost:4000` | Socket.IO server connection URL for frontend |
+| `PORT` | `4000` | Port for the backend Node.js server |
+| `CLIENT_URL` | `*` | Allowed CORS origin for production deployment |
+
+### Deployment Guide
+1. **Frontend (Static Site):**
+   - Host on Render Static Site, Vercel, or Netlify.
+   - Build Command: `npm run build`
+   - Publish Directory: `dist`
+   - Set environment variable `VITE_SERVER_URL` to your production backend URL.
+2. **Backend (Web Service):**
+   - Host on Render Web Service, Railway, or Fly.io.
+   - Build Command: `npm install`
+   - Start Command: `npm run server`
+   - Set `PORT` (e.g. `4000` or assigned by host) and `CLIENT_URL` to frontend production URL.
+
+### Verified vs Unverified Functionality Matrix
+| Feature | Status | Verification Method |
+| :--- | :--- | :--- |
+| Single-Player vs AI Bots (Easy, Medium, Hard) | ✅ Verified | Unit tests + UI manual tests |
+| Local Pass-and-Play (2–4 Players) | ✅ Verified | Unit tests + DOM checks |
+| 108-Card Deck Inventory & SVG Geometry | ✅ Verified | `npm run validate:deck` (8 checks) |
+| Online Room Creation & Joining (2–4 Players) | ✅ Verified | `scripts/verify-multiplayer-full.cjs` |
+| Authoritative Server Turn Transitions & Penalties | ✅ Verified | Multi-session Puppeteer integration test |
+| Opponent Hand Zero-Leakage Security | ✅ Verified | Inspected DOM + network payload in Puppeteer |
+| Session Token Disconnect & Reconnect | ✅ Verified | Automated tab reload test in Puppeteer |
+| Production Build & TypeScript Strict Mode | ✅ Verified | `tsc && vite build` (zero errors) |
+
