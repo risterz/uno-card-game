@@ -834,6 +834,10 @@
     gap: 16px;
     padding: 8px 16px;
   }
+  .center-table-console .card-size-md {
+    width: 96px;
+    height: 134.4px;
+  }
   .color-ring {
     width: 44px;
     height: 44px;
@@ -846,6 +850,58 @@
   .hand-cards-container {
     padding: 20px 10px 4px 10px;
     justify-content: flex-start; /* Clean swipe/scroll on mobile */
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --hand-card-width: 68px;
+    --hand-card-height: 95.2px;
+    --hand-card-overlap: -28px;
+  }
+  .center-table-console {
+    gap: 8px;
+    padding: 6px 10px;
+  }
+  .center-table-console .card-size-md {
+    width: 76px;
+    height: 106.4px;
+  }
+  .active-color-indicator {
+    min-width: 64px;
+    gap: 3px;
+  }
+  .color-ring {
+    width: 36px;
+    height: 36px;
+  }
+  .color-text-label {
+    font-size: 10px;
+  }
+  .center-turn-indicator {
+    font-size: 9px;
+  }
+  .opponents-row {
+    gap: 8px;
+    min-height: 56px;
+  }
+  .opponent-pod {
+    padding: 3px 6px;
+    min-width: 76px;
+  }
+  .opponent-avatar {
+    font-size: 13px;
+  }
+  .opponent-name {
+    font-size: 10px;
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .opponent-cards-badge {
+    font-size: 9px;
+    padding: 1px 4px;
   }
 }
 

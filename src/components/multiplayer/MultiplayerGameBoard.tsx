@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CardDefinition, CardColor } from '../../types/card';
 import { Card } from '../Card';
@@ -19,6 +19,8 @@ import {
   PlusCircle,
   CheckCircle2,
   Users,
+  Sparkles,
+  Crown,
 } from 'lucide-react';
 import '../../styles/game.css';
 import '../../styles/animations.css';
@@ -36,6 +38,7 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
   onLeaveRoom,
 }) => {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [discardLanded, setDiscardLanded] = useState(false);
 
   const publicState = view.publicState;
   const myPlayerId = view.myPlayerId;
@@ -58,6 +61,17 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
   // Calculate playability of each card in my hand
   const topDiscard = publicState.topDiscard;
   const activeColor = publicState.activeColor;
+
+  // Discard impact landing effect when top discard updates
+  const prevDiscardIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (topDiscard && topDiscard.id !== prevDiscardIdRef.current) {
+      prevDiscardIdRef.current = topDiscard.id;
+      setDiscardLanded(true);
+      const timer = setTimeout(() => setDiscardLanded(false), 450);
+      return () => clearTimeout(timer);
+    }
+  }, [topDiscard]);
 
   const playableCardIds = useMemo(() => {
     if (!isMyTurn || !topDiscard) return new Set<string>();
@@ -85,7 +99,6 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
         card.value === 'wild_draw4';
 
       if (isWild) {
-        // Trigger server awaiting_color_choice
         multiplayerService.playCard(roomCode, card.id);
       } else {
         multiplayerService.playCard(roomCode, card.id);
@@ -149,22 +162,6 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
     return -42;
   }, [handCount]);
 
-  // Color background helper
-  const getGlowColor = (c: CardColor) => {
-    switch (c) {
-      case 'red':
-        return '#E61938';
-      case 'blue':
-        return '#0066E5';
-      case 'green':
-        return '#00A852';
-      case 'yellow':
-        return '#F5A600';
-      default:
-        return '#38BDF8';
-    }
-  };
-
   return (
     <div className="game-container">
       {/* Action Effects Floating Toast Banner */}
@@ -215,9 +212,20 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
         />
       )}
 
-      {/* Top Header Controls Bar */}
-      <div className="game-header-bar">
-        <div className="game-status-indicators">
+      {/* 1. Game Top Status Bar (Matching Local Game) */}
+      <div className="game-top-bar">
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            minWidth: 0,
+          }}
+        >
+          <div className="game-status-pill">
+            <Sparkles size={16} className="brand-icon" />
+            <span>{publicState.lastActionMessage}</span>
+          </div>
           <span
             className="room-action-pill"
             style={{ fontWeight: 700 }}
@@ -236,7 +244,7 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
               background: 'rgba(56, 189, 248, 0.1)',
             }}
           >
-            Live Online Match
+            Live Match
           </span>
         </div>
 
@@ -246,15 +254,15 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
             onClick={onLeaveRoom}
             title="Leave Multiplayer Game"
           >
-            <LogOut size={14} /> Leave
+            <LogOut size={14} /> Leave Room
           </button>
         </div>
       </div>
 
-      {/* Main Play Area */}
-      <div className="game-board-surface">
-        {/* Opponents Section */}
-        <div className="online-opponents-row">
+      {/* 2. Main Arena Table (Reusing Local Tabletop Felt & Architecture) */}
+      <div className="game-arena">
+        {/* Opponents Row */}
+        <div className="opponents-row">
           {opponents.map(opp => {
             const isOppTurn = opp.id === currentPlayer?.id;
             const canCatch = opp.cardCount === 1 && !opp.unoDeclared;
@@ -262,54 +270,49 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
             return (
               <div
                 key={opp.id}
-                className={`online-opponent-card ${isOppTurn ? 'is-turn' : ''}`}
+                id={`opponent-pod-${opp.id}`}
+                className={`opponent-pod ${isOppTurn ? 'active-turn' : ''}`}
               >
-                <div className="online-opponent-header">
-                  <span>{opp.avatar}</span>
-                  <span>{opp.name}</span>
+                <div className="opponent-header">
+                  <span className="opponent-avatar">{opp.avatar}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span className="opponent-name">{opp.name}</span>
+                    {opp.isHost && (
+                      <span title="Room Host" style={{ display: 'inline-flex' }}>
+                        <Crown size={12} style={{ color: '#F5A600' }} />
+                      </span>
+                    )}
+                  </div>
                   <span
                     className={`connection-indicator ${opp.isConnected ? '' : 'disconnected'}`}
                     title={opp.isConnected ? 'Connected' : 'Disconnected'}
                   />
+                  <span className="opponent-cards-badge">
+                    {opp.cardCount} cards
+                  </span>
                 </div>
 
-                <div className="online-opponent-fan">
-                  {Array.from({ length: Math.min(opp.cardCount, 8) }).map((_, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        marginLeft: idx === 0 ? 0 : -18,
-                        transform: `rotate(${(idx - Math.min(opp.cardCount, 8) / 2) * 4}deg)`,
-                      }}
-                    >
-                      <CardBack size="sm" />
+                {/* Visual miniature cards fan matching local game table */}
+                <div className="opponent-cards-visual">
+                  {Array.from({ length: Math.min(opp.cardCount, 7) }).map((_, idx) => (
+                    <div key={idx} className="mini-card-back">
+                      <CardBack size="sm" interactive={false} />
                     </div>
                   ))}
-                  {opp.cardCount > 8 && (
-                    <span style={{ fontSize: '11px', color: '#94A3B8', marginLeft: 4 }}>
-                      +{opp.cardCount - 8}
+                  {opp.cardCount > 7 && (
+                    <span className="opponent-cards-badge">
+                      +{opp.cardCount - 7}
                     </span>
                   )}
                 </div>
 
-                <div style={{ fontSize: '11px', color: '#94A3B8' }}>
-                  {opp.cardCount} {opp.cardCount === 1 ? 'card' : 'cards'}
-                </div>
-
-                {opp.unoDeclared && opp.cardCount <= 2 && (
-                  <span
-                    style={{
-                      fontSize: '10px',
-                      color: '#F5A600',
-                      fontWeight: 700,
-                      marginTop: 2,
-                    }}
-                  >
-                    📢 UNO!
-                  </span>
+                {/* UNO call badge */}
+                {opp.cardCount === 1 && opp.unoDeclared && (
+                  <div className="opponent-uno-badge">UNO!</div>
                 )}
 
-                {canCatch && (
+                {/* Catch UNO button when opponent forgot */}
+                {canCatch && isMyTurn && (
                   <button
                     className="catch-uno-btn"
                     onClick={() => handleCatchUno(opp.id)}
@@ -323,59 +326,66 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
           })}
         </div>
 
-        {/* Center Piles Area */}
-        <div className="center-piles-area">
-          {/* Draw Pile */}
-          <div
-            className={`pile-card-wrapper draw-pile-card ${isMyTurn ? 'pulse-playable' : ''}`}
-            onClick={handleDrawCard}
-            title={isMyTurn ? 'Click to draw 1 card' : 'Waiting for your turn'}
-            data-testid="online-draw-pile"
-          >
-            <CardBack size="lg" />
-            <span className="deck-counter">{publicState.drawPileCount}</span>
-          </div>
+        {/* Center Table Area: Draw Pile, Active Color Ring & Discard Pile (Side by Side) */}
+        <div className="center-play-area">
+          <div className="center-table-console">
+            {/* Draw Pile */}
+            <div className="pile-container">
+              <span className="pile-label">Draw Pile</span>
+              <div
+                id="draw-pile-target"
+                className={`draw-pile-wrapper ${!isMyTurn ? 'disabled' : ''}`}
+                onClick={handleDrawCard}
+                title={isMyTurn ? 'Click to draw a card' : 'Wait for your turn'}
+                data-testid="online-draw-pile"
+              >
+                <CardBack size="md" />
+                <span className="draw-count-badge">
+                  {publicState.drawPileCount}
+                </span>
+              </div>
+            </div>
 
-          {/* Direction Indicator */}
-          <div
-            className={`direction-ring ${publicState.direction === 1 ? 'cw' : 'ccw'}`}
-            style={{
-              borderColor: getGlowColor(publicState.activeColor),
-              boxShadow: `0 0 24px ${getGlowColor(publicState.activeColor)}33`,
-            }}
-          >
-            <RotateCw size={28} style={{ color: getGlowColor(publicState.activeColor) }} />
-            <span
-              className="active-color-name"
-              style={{ color: getGlowColor(publicState.activeColor) }}
-            >
-              {publicState.activeColor.toUpperCase()}
-            </span>
-          </div>
+            {/* Active Color & Turn Console */}
+            <div className="active-color-indicator">
+              <div className={`color-ring color-${publicState.activeColor}`}>
+                <RotateCw
+                  size={24}
+                  className={`direction-icon ${publicState.direction === -1 ? 'reverse' : ''}`}
+                />
+              </div>
+              <span className="color-text-label">{publicState.activeColor}</span>
+              <span
+                className={`center-turn-indicator ${isMyTurn ? 'human-turn' : ''}`}
+              >
+                {isMyTurn ? '👉 Your Turn' : `⏳ ${currentPlayer?.name || 'Waiting'}'s Turn`}
+              </span>
+            </div>
 
-          {/* Discard Pile */}
-          <div
-            id="discard-pile-target"
-            className="pile-card-wrapper discard-pile-card"
-          >
-            {topDiscard ? (
-              <Card card={topDiscard} size="lg" />
-            ) : (
-              <CardBack size="lg" />
-            )}
-            <span className="discard-counter">
-              {publicState.discardPileCount}
-            </span>
+            {/* Discard Pile with Landing Shockwave */}
+            <div className="pile-container">
+              <span className="pile-label">Discard Pile</span>
+              <div
+                id="discard-pile-target"
+                className={`discard-pile-wrapper ${discardLanded ? 'landed' : ''}`}
+              >
+                {discardLanded && <div className="discard-impact-ring" />}
+                {topDiscard ? (
+                  <Card card={topDiscard} size="md" interactive={false} />
+                ) : (
+                  <CardBack size="md" interactive={false} />
+                )}
+                <span className="draw-count-badge" style={{ bottom: -6, right: -6 }}>
+                  {publicState.discardPileCount}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Action message banner */}
-        <div className="action-announcement-banner">
-          <span>{publicState.lastActionMessage}</span>
-        </div>
-
-        {/* Human Hand Section */}
+        {/* Human Player Hand Section (Dedicated Bottom Area) */}
         <div className="human-hand-section">
+          {/* Hand Action Toolbar */}
           <div
             className={`hand-toolbar ${isMyTurn ? 'active-turn-toolbar' : ''}`}
           >
@@ -457,7 +467,7 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
             </div>
           </div>
 
-          {/* Human Hand Cards Container */}
+          {/* Cards Hand Container with Controlled Overlap */}
           <div
             id="human-hand-container"
             className="hand-cards-container"
