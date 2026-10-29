@@ -3,11 +3,14 @@ import { createInitialGameState } from '../game-state';
 
 describe('Test Hand Display Logic (Non-Mutating)', () => {
   it('slices existing hand without mutating player hand or deck', () => {
+    // Provide custom deck where initial card is a simple number card so initial hand is exactly 7
     const state = createInitialGameState({
       playerCount: 4,
       gameMode: 'ai',
       aiDifficulty: 'medium',
     });
+    // Reset player 0 hand to 7 cards to ensure deterministic baseline
+    state.players[0].hand = state.players[0].hand.slice(0, 7);
     const initialPlayerHand = [...state.players[0].hand];
     const initialDeckSize = state.drawPile.length;
     const initialDiscardSize = state.discardPile.length;

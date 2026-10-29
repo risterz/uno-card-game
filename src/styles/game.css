@@ -948,14 +948,23 @@
 .local-game-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 65px);
-  min-height: 560px;
+  height: calc(100vh - 56px);
+  height: calc(100dvh - 52px);
+  min-height: 480px;
   max-width: 1440px;
   margin: 0 auto;
-  padding: clamp(6px, 1.2vh, 12px) 16px;
+  padding: clamp(4px, 1vh, 12px) 16px;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   user-select: none;
+}
+
+.game-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .local-game-arena {
@@ -1137,5 +1146,268 @@
     --arena-pad-bottom: 8px;
   }
 }
+
+/* ==========================================================================
+   MOBILE RESPONSIVE BREAKPOINT (max-width: 600px)
+   ========================================================================== */
+@media (max-width: 600px) {
+  .local-game-container {
+    height: auto;
+    min-height: calc(100vh - 48px);
+    min-height: calc(100dvh - 44px);
+    padding: 4px 6px max(6px, env(safe-area-inset-bottom, 6px)) 6px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  /* 1. Header & Toolbar: 2-Row Layout */
+  .game-top-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 6px 10px;
+    margin-bottom: 4px;
+  }
+
+  .game-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .game-status-pill {
+    font-size: 11px;
+    gap: 6px;
+    max-width: 70%;
+  }
+
+  .game-status-pill .brand-icon {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+  }
+
+  .difficulty-badge {
+    padding: 2px 6px;
+    font-size: 9px;
+    letter-spacing: 0.02em;
+  }
+
+  .game-controls-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    padding: 2px 0 4px 0;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+
+  .game-controls-group::-webkit-scrollbar {
+    display: none;
+  }
+
+  .game-controls-group .game-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    min-height: 32px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* 2. Arena Layout & Vertical Spacing */
+  .local-game-arena {
+    padding: 4px 6px clamp(14px, 2vh, 20px) 6px;
+    border-radius: 16px;
+    border-width: 2px;
+    --gap-opp-to-center: clamp(10px, 1.5vh, 16px);
+    --gap-center-to-status: clamp(18px, 2.5vh, 24px);
+    --gap-status-to-hand: clamp(14px, 2vh, 20px);
+    --arena-pad-top: 4px;
+    --arena-pad-bottom: clamp(14px, 2vh, 20px);
+  }
+
+  /* Region 1: Opponents Row */
+  .local-opponents-row {
+    gap: 6px;
+    margin-bottom: var(--gap-opp-to-center);
+  }
+
+  .local-opponents-row .opponent-pod {
+    padding: 3px 6px;
+    min-width: 58px;
+    max-width: 92px;
+    border-radius: 10px;
+  }
+
+  .local-opponents-row .opponent-avatar {
+    font-size: 13px;
+  }
+
+  .local-opponents-row .opponent-name {
+    font-size: 10px;
+    max-width: 52px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .local-opponents-row .opponent-difficulty-tag {
+    display: none;
+  }
+
+  .local-opponents-row .opponent-cards-badge {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+
+  .local-opponents-row .opponent-cards-visual {
+    height: 18px;
+    margin-top: 2px;
+  }
+
+  .local-opponents-row .mini-card-back {
+    width: 14px;
+    height: 20px;
+    margin-left: -10px;
+    border-radius: 3px;
+  }
+
+  /* Region 2: Central Play Area */
+  .local-center-play-area {
+    margin-bottom: var(--gap-center-to-status);
+  }
+
+  .local-center-table-console {
+    gap: 10px;
+    padding: 6px 12px;
+    border-radius: 14px;
+  }
+
+  .local-center-table-console .card-size-md {
+    width: 60px;
+    height: 84px;
+  }
+
+  .local-center-table-console .color-ring {
+    width: 32px;
+    height: 32px;
+  }
+
+  .local-center-table-console .color-text-label {
+    font-size: 9px;
+  }
+
+  .local-center-table-console .center-turn-indicator {
+    font-size: 9px;
+  }
+
+  .local-center-table-console .pile-label {
+    font-size: 8px;
+  }
+
+  .local-center-table-console .draw-count-badge {
+    bottom: 2px;
+    right: 2px;
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+
+  /* Region 3: Player Status Region */
+  .local-player-status-region {
+    margin-bottom: var(--gap-status-to-hand);
+  }
+
+  .local-hand-toolbar {
+    padding: 4px 8px;
+    gap: 6px;
+    border-radius: 10px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .local-hand-toolbar .hand-left-info {
+    font-size: 11px;
+    gap: 6px;
+  }
+
+  .local-hand-toolbar .player-name-badge {
+    font-size: 11px;
+  }
+
+  .local-hand-toolbar .turn-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+
+  .local-hand-toolbar .game-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+    min-height: 34px;
+  }
+
+  .local-hand-toolbar .uno-shout-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+    min-height: 34px;
+  }
+
+  /* Region 4: Hand Region & Cards Container */
+  .local-player-hand-region {
+    --hand-card-width: 60px;
+    --hand-card-height: 84px;
+  }
+
+  .local-hand-cards-container {
+    padding: 16px 8px 4px 8px;
+    min-height: calc(var(--hand-card-height) + 18px);
+    justify-content: safe center;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .local-player-hand-region .hand-card-wrapper.is-selected {
+    transform: translateY(-16px) scale(1.06) !important;
+    margin-right: 4px;
+    margin-left: calc(var(--hand-card-overlap) + 4px);
+  }
+
+  .local-player-hand-region .hand-card-wrapper.is-playable {
+    transform: translateY(-6px);
+  }
+
+  .local-player-hand-region .hand-card-wrapper.is-playable:hover {
+    transform: translateY(-14px) scale(1.05);
+  }
+
+  .local-player-hand-region .playable-dot {
+    top: -6px;
+    width: 7px;
+    height: 7px;
+  }
+}
+
+/* ==========================================================================
+   TABLET RESPONSIVE BREAKPOINT (601px to 900px)
+   ========================================================================== */
+@media (min-width: 601px) and (max-width: 900px) {
+  .local-player-hand-region {
+    --hand-card-width: 80px;
+    --hand-card-height: 112px;
+  }
+
+  .local-center-table-console .card-size-md {
+    width: 72px;
+    height: 100.8px;
+  }
+
+  .local-hand-cards-container {
+    justify-content: safe center;
+  }
+}
+
 
 

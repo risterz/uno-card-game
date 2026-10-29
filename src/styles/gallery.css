@@ -773,31 +773,50 @@ body {
   .top-nav {
     padding: 6px 10px;
     gap: 8px;
-    min-height: 52px;
+    min-height: 48px;
   }
   .brand-badge {
     display: none;
   }
   .brand-logo-badge {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     border-radius: 8px;
   }
   .brand-text {
-    font-size: 14px;
+    font-size: 13px;
+  }
+  .nav-tabs-wrapper {
+    flex: 1;
+    min-width: 0;
   }
   .nav-tabs {
-    padding: 3px;
+    padding: 2px;
     gap: 2px;
   }
   .nav-tab {
-    padding: 5px 8px;
+    padding: 4px 7px;
     font-size: 11px;
-    gap: 4px;
+    gap: 3px;
   }
   .nav-tab-icon {
-    width: 13px;
-    height: 13px;
+    width: 12px;
+    height: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .top-nav {
+    padding: 4px 6px;
+    gap: 6px;
+    min-height: 44px;
+  }
+  .brand-text {
+    display: none;
+  }
+  .nav-tab {
+    padding: 4px 6px;
+    font-size: 10px;
   }
 }
 

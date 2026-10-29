@@ -318,3 +318,26 @@
     animation: none !important;
   }
 }
+
+/* 9. Mobile Notification Overrides */
+@media (max-width: 600px) {
+  .action-effect-overlay {
+    top: 52px;
+    max-width: 90vw;
+  }
+  .action-banner-skip,
+  .action-banner-reverse,
+  .action-banner-draw,
+  .action-banner-wild4,
+  .action-banner-uno,
+  .action-banner-caught {
+    padding: 5px 12px;
+    gap: 6px;
+  }
+  .banner-title {
+    font-size: 11px;
+  }
+  .banner-subtitle {
+    font-size: 10px;
+  }
+}

@@ -767,14 +767,46 @@ export const GameBoard: React.FC = () => {
     return gameState.players.filter((_, idx) => idx !== 0);
   }, [gameState.players, gameState.currentPlayerIndex, settings.gameMode]);
 
-  // Dynamic overlap calculation based on rendered hand size
+  // Dynamic overlap calculation based on rendered hand size and screen width
   const handCardCount = renderedHand.length;
+  const [windowWidth, setWindowWidth] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth : 1200
+  );
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const calculatedOverlap = useMemo(() => {
     if (handCardCount <= 1) return 0;
+
+    const isMobile = windowWidth <= 600;
+    const isTablet = windowWidth <= 900;
+    const cardWidth = isMobile ? 60 : isTablet ? 80 : 104;
+
+    // Available width inside container
+    const containerPad = isMobile ? 24 : 48;
+    const availableWidth = Math.min(windowWidth - containerPad, 1000);
+
+    const totalUnoverlapped = handCardCount * cardWidth;
+    if (totalUnoverlapped > availableWidth) {
+      const neededOverlap = Math.floor(
+        (availableWidth - totalUnoverlapped) / (handCardCount - 1)
+      );
+      const minVisible = isMobile ? 18 : 28;
+      const maxNegativeOverlap = -(cardWidth - minVisible);
+      return Math.max(neededOverlap, maxNegativeOverlap);
+    }
+
+    if (isMobile) {
+      return handCardCount <= 7 ? -18 : -28;
+    }
     if (handCardCount <= 7) return -12;
     if (handCardCount <= 13) return -28;
     return -42;
-  }, [handCardCount]);
+  }, [handCardCount, windowWidth]);
 
   return (
     <div className="game-container local-game-container">
@@ -804,14 +836,7 @@ export const GameBoard: React.FC = () => {
 
       {/* 1. Game Top Status Bar */}
       <div className="game-top-bar">
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            minWidth: 0,
-          }}
-        >
+        <div className="game-status-row">
           <div className="game-status-pill">
             <Sparkles size={16} className="brand-icon" />
             <span>{gameState.lastActionMessage}</span>

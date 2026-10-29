@@ -157,7 +157,9 @@ describe('Game State & Action Cards', () => {
     state.discardPile = [topCard];
     state.activeColor = 'green';
     state.currentPlayerIndex = 0;
+    state.direction = 1;
     state.players[0].hand = [p1Draw2, createMockCard('green', '9')];
+    state.players[1].hand = [createMockCard('blue', '1'), createMockCard('blue', '2'), createMockCard('blue', '3'), createMockCard('blue', '4'), createMockCard('blue', '5'), createMockCard('blue', '6'), createMockCard('blue', '7')];
     const victimInitialHandCount = state.players[1].hand.length;
 
     const nextState = playCard(state, state.players[0].id, p1Draw2.id);
