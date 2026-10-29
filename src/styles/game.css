@@ -583,6 +583,13 @@
   will-change: transform;
 }
 
+/* Ensure inner card-wrapper does not compound transforms inside hand */
+.hand-card-wrapper .card-wrapper,
+.hand-card-wrapper .card-wrapper:hover,
+.hand-card-wrapper .card-wrapper.selected {
+  transform: none !important;
+}
+
 .hand-card-wrapper:first-child {
   margin-left: 0;
 }
@@ -992,7 +999,7 @@
   /* Exact starting values adjusted according to viewport height */
   --gap-opp-to-center: clamp(16px, 2.4vh, 24px);
   --gap-center-to-status: clamp(20px, 3vh, 28px);
-  --gap-status-to-hand: clamp(16px, 2.4vh, 24px);
+  --gap-status-to-hand: clamp(20px, 3vh, 32px);
   --arena-pad-top: clamp(10px, 1.6vh, 18px);
   --arena-pad-bottom: clamp(16px, 2.4vh, 28px);
 
@@ -1124,8 +1131,14 @@
   max-width: 100%;
   overflow-x: auto;
   overflow-y: visible;
-  padding: clamp(24px, 3.8vh, 36px) 20px clamp(4px, 1vh, 8px) 20px;
-  min-height: calc(var(--hand-card-height) + clamp(26px, 4vh, 40px));
+  padding: clamp(28px, 4vh, 40px) 20px clamp(4px, 1vh, 8px) 20px;
+  min-height: calc(var(--hand-card-height) + clamp(30px, 4.4vh, 44px));
+}
+
+.local-player-hand-region .hand-card-wrapper.is-selected {
+  transform: translateY(-18px) scale(1.08) !important;
+  margin-right: 8px;
+  margin-left: calc(var(--hand-card-overlap) + 8px);
 }
 
 /* Shorter screens responsive compaction */
@@ -1235,8 +1248,8 @@
     border-radius: 16px;
     border-width: 2px;
     --gap-opp-to-center: clamp(10px, 1.5vh, 16px);
-    --gap-center-to-status: clamp(18px, 2.5vh, 24px);
-    --gap-status-to-hand: clamp(14px, 2vh, 20px);
+    --gap-center-to-status: clamp(16px, 2.2vh, 22px);
+    --gap-status-to-hand: clamp(16px, 2.4vh, 24px);
     --arena-pad-top: 4px;
     --arena-pad-bottom: clamp(14px, 2vh, 20px);
   }
@@ -1373,24 +1386,24 @@
   }
 
   .local-hand-cards-container {
-    padding: 16px 8px 4px 8px;
-    min-height: calc(var(--hand-card-height) + 18px);
+    padding: 20px 8px 4px 8px;
+    min-height: calc(var(--hand-card-height) + 24px);
     justify-content: safe center;
     -webkit-overflow-scrolling: touch;
   }
 
   .local-player-hand-region .hand-card-wrapper.is-selected {
-    transform: translateY(-16px) scale(1.06) !important;
+    transform: translateY(-12px) scale(1.05) !important;
     margin-right: 4px;
     margin-left: calc(var(--hand-card-overlap) + 4px);
   }
 
   .local-player-hand-region .hand-card-wrapper.is-playable {
-    transform: translateY(-6px);
+    transform: translateY(-5px);
   }
 
   .local-player-hand-region .hand-card-wrapper.is-playable:hover {
-    transform: translateY(-14px) scale(1.05);
+    transform: translateY(-10px) scale(1.04);
   }
 
   .local-player-hand-region .playable-dot {
