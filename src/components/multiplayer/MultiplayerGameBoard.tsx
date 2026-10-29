@@ -90,6 +90,16 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
   const topDiscard = publicState.topDiscard;
   const activeColor = publicState.activeColor;
 
+  const [testOverrideAwaitingChoice, setTestOverrideAwaitingChoice] = useState(false);
+  const isAwaitingColorChoice = testOverrideAwaitingChoice || (publicState.gameStatus === 'awaiting_color_choice' && isMyTurn);
+
+  // QA / automated testing helper
+  useEffect(() => {
+    (window as any).__UNO_ONLINE_TRIGGER_WILD_MODAL__ = () => {
+      setTestOverrideAwaitingChoice(true);
+    };
+  }, []);
+
   // Safe measurement helper with viewport fallback
   const getElementRect = (
     id: string,
@@ -342,6 +352,7 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
 
   // Handle Color Choice
   const handleColorChoice = (color: CardColor) => {
+    setTestOverrideAwaitingChoice(false);
     multiplayerService.chooseColor(roomCode, color);
     playSfx('wild');
   };
@@ -804,7 +815,7 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
 
       {/* Wild Color Selection Modal */}
       <AnimatePresence>
-        {publicState.gameStatus === 'awaiting_color_choice' && isMyTurn && (
+        {isAwaitingColorChoice && (
           <motion.div
             className="color-choice-modal"
             variants={modalBackdropVariants}
@@ -813,21 +824,26 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
             exit="exit"
           >
             <motion.div
-              className="color-choice-content"
+              className="color-choice-box"
               variants={modalDialogVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
             >
-              <h3>Wild Card Played!</h3>
-              <p>Select the next active color for the game table:</p>
-              <div className="color-grid">
+              <h3 className="color-choice-title">Wild Card Played!</h3>
+              <p className="color-choice-subtitle">Select the next active color for the game table:</p>
+              <div className="color-buttons-grid">
                 {(['red', 'blue', 'green', 'yellow'] as CardColor[]).map(color => (
-                  <button
+                  <motion.button
                     key={color}
-                    className={`color-btn ${color}`}
+                    className={`color-pick-btn ${color}`}
+                    whileHover={{ scale: 1.06, y: -4 }}
+                    whileTap={{ scale: 0.96 }}
                     onClick={() => handleColorChoice(color)}
                     data-testid={`wild-color-${color}`}
                   >
                     {color.toUpperCase()}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             </motion.div>

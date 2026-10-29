@@ -1388,6 +1388,37 @@
     width: 7px;
     height: 7px;
   }
+
+  /* Wild Color Selection Modal Responsive */
+  .color-choice-modal {
+    padding: 16px;
+  }
+
+  .color-choice-box {
+    padding: 20px 16px;
+    border-radius: 16px;
+    max-width: 320px;
+  }
+
+  .color-choice-title {
+    font-size: 18px;
+    margin-bottom: 6px;
+  }
+
+  .color-choice-subtitle {
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+
+  .color-buttons-grid {
+    gap: 10px;
+  }
+
+  .color-pick-btn {
+    height: 48px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
 }
 
 /* ==========================================================================
