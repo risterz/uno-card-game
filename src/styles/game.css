@@ -987,10 +987,26 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   z-index: 5;
   margin-bottom: var(--gap-opp-to-center);
-  min-height: 76px;
+  min-height: auto;
+}
+
+.local-opponents-row .opponent-pod {
+  padding: clamp(3px, 0.6vh, 6px) clamp(8px, 1.2vw, 12px);
+  min-width: clamp(84px, 9vw, 110px);
+}
+
+.local-opponents-row .opponent-cards-visual {
+  height: clamp(24px, 3.6vh, 34px);
+  margin-top: 2px;
+}
+
+.local-opponents-row .mini-card-back {
+  width: clamp(18px, 2.6vh, 25px);
+  height: clamp(24px, 3.6vh, 34px);
+  margin-left: clamp(-15px, -1.8vh, -17px);
 }
 
 /* Region 2: Draw pile, discard pile, and active-color indicator in the center */
@@ -1000,7 +1016,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 140px;
+  min-height: auto;
   max-height: none;
   margin-bottom: var(--gap-center-to-status);
   position: relative;
@@ -1011,13 +1027,36 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(16px, 2.5vw, 28px);
+  gap: clamp(14px, 2vw, 24px);
   background: rgba(15, 23, 42, 0.55);
   border: 1.5px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: clamp(8px, 1.4vh, 14px) clamp(16px, 2.5vw, 24px);
+  border-radius: 18px;
+  padding: clamp(6px, 1.2vh, 10px) clamp(14px, 2vw, 22px);
   backdrop-filter: blur(8px);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+}
+
+.local-center-table-console .card-size-md {
+  width: clamp(76px, 11vh, 114px);
+  height: clamp(106px, 15.4vh, 160px);
+}
+
+.local-center-table-console .color-ring {
+  width: clamp(38px, 5.5vh, 48px);
+  height: clamp(38px, 5.5vh, 48px);
+}
+
+.local-center-table-console .pile-label {
+  font-size: clamp(9px, 1.3vh, 11px);
+}
+
+/* Dock draw count badge inside card so it never hangs into gap */
+.local-game-arena .draw-count-badge {
+  bottom: 4px;
+  right: 4px;
+  padding: 1px 6px;
+  font-size: 10px;
+  z-index: 5;
 }
 
 /* Region 3: Player status and action controls below the central play area */
@@ -1034,7 +1073,7 @@
 .local-hand-toolbar {
   width: 100%;
   max-width: 1040px;
-  padding: 6px 14px;
+  padding: clamp(4px, 0.8vh, 6px) clamp(10px, 1.2vw, 14px);
   background: rgba(15, 23, 42, 0.88);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1054,6 +1093,8 @@
   position: relative;
   z-index: 10;
   min-height: auto;
+  --hand-card-width: clamp(72px, 10.5vh, 104px);
+  --hand-card-height: clamp(100px, 14.7vh, 145.6px);
 }
 
 .local-hand-cards-container {
@@ -1064,44 +1105,36 @@
   max-width: 100%;
   overflow-x: auto;
   overflow-y: visible;
-  padding: 38px 24px 6px 24px;
-  min-height: calc(var(--hand-card-height) + 44px);
+  padding: clamp(24px, 3.8vh, 36px) 20px clamp(4px, 1vh, 8px) 20px;
+  min-height: calc(var(--hand-card-height) + clamp(26px, 4vh, 40px));
 }
 
-/* Shorter screens responsive compaction (e.g., 720p or small height) */
-@media (max-height: 740px) {
+/* Shorter screens responsive compaction */
+@media (max-height: 760px) {
   .local-game-container {
-    padding: 4px 12px;
-    min-height: 520px;
+    padding: 3px 10px;
+    min-height: 480px;
+  }
+  .local-game-arena {
+    --gap-opp-to-center: 18px;
+    --gap-center-to-status: 22px;
+    --gap-status-to-hand: 18px;
+    --arena-pad-top: 6px;
+    --arena-pad-bottom: 12px;
+  }
+}
+
+@media (max-height: 660px) {
+  .local-game-container {
+    padding: 2px 8px;
+    min-height: 420px;
   }
   .local-game-arena {
     --gap-opp-to-center: 16px;
     --gap-center-to-status: 20px;
     --gap-status-to-hand: 16px;
-    --arena-pad-top: 8px;
-    --arena-pad-bottom: 14px;
-  }
-  .local-opponents-row {
-    min-height: 64px;
-  }
-  .local-center-play-area {
-    min-height: 125px;
-  }
-  .local-center-table-console {
-    padding: 6px 16px;
-    gap: 18px;
-  }
-  .local-center-table-console .card-size-md {
-    width: 104px;
-    height: 145.6px;
-  }
-  .local-center-table-console .color-ring {
-    width: 44px;
-    height: 44px;
-  }
-  .local-hand-cards-container {
-    padding: 30px 16px 4px 16px;
-    min-height: calc(var(--hand-card-height) + 34px);
+    --arena-pad-top: 4px;
+    --arena-pad-bottom: 8px;
   }
 }
 
