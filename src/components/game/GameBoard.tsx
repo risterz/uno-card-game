@@ -17,9 +17,8 @@ import { computeAIMove, findOpponentToCatchUno } from '../../engine/ai';
 import { getPlayableCards } from '../../engine/rules';
 import { FULL_DECK } from '../../data/deck';
 import { playSound, preloadSounds, SoundEffect } from '../../utils/audio';
+import { useAnimationSettings } from '../../utils/animation-settings';
 import {
-  AnimationIntensity,
-  prefersReducedMotion,
   springs,
   modalBackdropVariants,
   modalDialogVariants,
@@ -69,10 +68,9 @@ export const GameBoard: React.FC = () => {
   const [privacyHidden, setPrivacyHidden] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // Animation settings
-  const [animationIntensity, setAnimationIntensity] = useState<AnimationIntensity>(() => {
-    return prefersReducedMotion() ? 'reduced' : 'full';
-  });
+  // Animation settings (synchronized across local & online)
+  const [animationIntensity, setAnimationIntensity, cycleAnimationIntensity] =
+    useAnimationSettings();
 
   // Active animations & notifications state
   const [flights, setFlights] = useState<FlightItem[]>([]);
@@ -777,15 +775,6 @@ export const GameBoard: React.FC = () => {
     if (handCardCount <= 13) return -28;
     return -42;
   }, [handCardCount]);
-
-  // Toggle animation setting
-  const cycleAnimationIntensity = () => {
-    setAnimationIntensity(curr => {
-      if (curr === 'full') return 'reduced';
-      if (curr === 'reduced') return 'off';
-      return 'full';
-    });
-  };
 
   return (
     <div className="game-container">

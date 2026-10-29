@@ -4,10 +4,13 @@ import { CardDefinition, CardColor } from '../../types/card';
 import { Card } from '../Card';
 import { CardBack } from '../CardBack';
 import { multiplayerService } from '../../services/multiplayer-socket';
-import { PlayerPrivateView, ActionNotificationPayload } from '../../types/multiplayer';
+import { PlayerPrivateView, ActionNotificationPayload, PublicGameState } from '../../types/multiplayer';
 import { isCardPlayable } from '../../engine/rules';
 import { ActionEffects } from '../game/ActionEffects';
 import { VictoryCelebration } from '../game/VictoryCelebration';
+import { CardFlightLayer, FlightItem } from '../game/CardFlightLayer';
+import { useAnimationSettings } from '../../utils/animation-settings';
+import { playSound, preloadSounds, SoundEffect } from '../../utils/audio';
 import {
   modalBackdropVariants,
   modalDialogVariants,
@@ -21,6 +24,10 @@ import {
   Users,
   Sparkles,
   Crown,
+  Zap,
+  ZapOff,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import '../../styles/game.css';
 import '../../styles/animations.css';
@@ -39,6 +46,27 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
 }) => {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [discardLanded, setDiscardLanded] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Shared animation settings (Full, Reduced, Off)
+  const [animationIntensity, , cycleAnimationIntensity] = useAnimationSettings();
+
+  // Active flight animations and hidden cards during flight
+  const [flights, setFlights] = useState<FlightItem[]>([]);
+  const [hiddenCardIds, setHiddenCardIds] = useState<Set<string>>(new Set());
+  const isCardInFlightRef = useRef(false);
+
+  // Preload sound effects on mount
+  useEffect(() => {
+    preloadSounds();
+  }, []);
+
+  const playSfx = useCallback(
+    (type: SoundEffect) => {
+      playSound(type, soundEnabled);
+    },
+    [soundEnabled]
+  );
 
   const publicState = view.publicState;
   const myPlayerId = view.myPlayerId;
@@ -58,21 +86,61 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
     return publicState.players.find(p => p.id === myPlayerId);
   }, [publicState.players, myPlayerId]);
 
-  // Calculate playability of each card in my hand
+  // Top discard and active color
   const topDiscard = publicState.topDiscard;
   const activeColor = publicState.activeColor;
 
-  // Discard impact landing effect when top discard updates
-  const prevDiscardIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (topDiscard && topDiscard.id !== prevDiscardIdRef.current) {
-      prevDiscardIdRef.current = topDiscard.id;
-      setDiscardLanded(true);
-      const timer = setTimeout(() => setDiscardLanded(false), 450);
-      return () => clearTimeout(timer);
-    }
-  }, [topDiscard]);
+  // Safe measurement helper with viewport fallback
+  const getElementRect = (
+    id: string,
+    fallback: { x: number; y: number; width: number; height: number }
+  ) => {
+    if (typeof document === 'undefined') return fallback;
+    const el = document.getElementById(id);
+    if (!el) return fallback;
+    const r = el.getBoundingClientRect();
+    return { x: r.left, y: r.top, width: r.width, height: r.height };
+  };
 
+  // Trigger flight item helper
+  const triggerFlight = useCallback(
+    (params: {
+      type: 'play' | 'draw';
+      card?: CardDefinition;
+      fromRect: { x: number; y: number; width: number; height: number };
+      toRect: { x: number; y: number; width: number; height: number };
+      startRotation?: number;
+      endRotation?: number;
+      faceDown?: boolean;
+      onComplete?: () => void;
+    }) => {
+      if (animationIntensity === 'off') {
+        params.onComplete?.();
+        return;
+      }
+
+      const flightId = `flight-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const item: FlightItem = {
+        id: flightId,
+        type: params.type,
+        card: params.card,
+        fromRect: params.fromRect,
+        toRect: params.toRect,
+        startRotation: params.startRotation,
+        endRotation: params.endRotation,
+        faceDown: params.faceDown,
+        onComplete: () => {
+          setFlights(prev => prev.filter(f => f.id !== flightId));
+          params.onComplete?.();
+        },
+      };
+
+      setFlights(prev => [...prev, item]);
+    },
+    [animationIntensity]
+  );
+
+  // Playable card IDs in my hand
   const playableCardIds = useMemo(() => {
     if (!isMyTurn || !topDiscard) return new Set<string>();
     const playable = view.myHand.filter(card =>
@@ -87,52 +155,221 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
     return view.myHand.find(c => c.id === selectedCardId) || null;
   }, [selectedCardId, view.myHand]);
 
-  // Handle Play Card
+  // Track state transitions to animate opponent plays and card draws
+  const prevPublicStateRef = useRef<PublicGameState | null>(null);
+  const prevMyHandCountRef = useRef<number>(view.myHand.length);
+
+  useEffect(() => {
+    const prevState = prevPublicStateRef.current;
+    if (prevState && animationIntensity !== 'off') {
+      const oldTopDiscard = prevState.topDiscard;
+      const newTopDiscard = publicState.topDiscard;
+
+      // 1. Detect Opponent Playing a Card
+      if (newTopDiscard && newTopDiscard.id !== oldTopDiscard?.id) {
+        const lastMover = prevState.players[prevState.currentPlayerIndex];
+        // If an opponent played this card
+        if (lastMover && lastMover.id !== myPlayerId) {
+          const fromRect = getElementRect(`opponent-pod-${lastMover.id}`, {
+            x: window.innerWidth / 2 - 50,
+            y: 70,
+            width: 110,
+            height: 80,
+          });
+
+          const toRect = getElementRect('discard-pile-target', {
+            x: window.innerWidth / 2 + 50,
+            y: window.innerHeight / 2 - 84,
+            width: 120,
+            height: 168,
+          });
+
+          triggerFlight({
+            type: 'play',
+            faceDown: true, // Never reveal hidden card face in flight
+            fromRect,
+            toRect,
+            startRotation: -12,
+            endRotation: (Math.random() - 0.5) * 12,
+            onComplete: () => {
+              setDiscardLanded(true);
+              setTimeout(() => setDiscardLanded(false), 450);
+              playSfx(newTopDiscard.color === 'wild' ? 'wild' : 'card');
+            },
+          });
+        }
+      }
+
+      // 2. Detect My Drawn Cards (Single draw or multi-card penalty like +2, +4)
+      const myDiff = view.myHand.length - prevMyHandCountRef.current;
+      if (myDiff > 0) {
+        const drawRect = getElementRect('draw-pile-target', {
+          x: window.innerWidth / 2 - 170,
+          y: window.innerHeight / 2 - 84,
+          width: 120,
+          height: 168,
+        });
+
+        const handRect = getElementRect('human-hand-container', {
+          x: window.innerWidth / 2 - 52,
+          y: window.innerHeight - 150,
+          width: 104,
+          height: 145.6,
+        });
+
+        for (let i = 0; i < myDiff; i++) {
+          setTimeout(() => {
+            triggerFlight({
+              type: 'draw',
+              faceDown: true,
+              fromRect: drawRect,
+              toRect: handRect,
+              startRotation: 0,
+              endRotation: (Math.random() - 0.5) * 12,
+              onComplete: () => {
+                playSfx('draw');
+              },
+            });
+          }, i * 120);
+        }
+      }
+
+      // 3. Detect Opponent Drawn Cards
+      opponents.forEach(opp => {
+        const prevOpp = prevState.players.find(p => p.id === opp.id);
+        const oppDiff = opp.cardCount - (prevOpp ? prevOpp.cardCount : opp.cardCount);
+        if (oppDiff > 0) {
+          const drawRect = getElementRect('draw-pile-target', {
+            x: window.innerWidth / 2 - 170,
+            y: window.innerHeight / 2 - 84,
+            width: 120,
+            height: 168,
+          });
+
+          const oppRect = getElementRect(`opponent-pod-${opp.id}`, {
+            x: window.innerWidth / 2 - 50,
+            y: 70,
+            width: 110,
+            height: 80,
+          });
+
+          for (let i = 0; i < Math.min(oppDiff, 4); i++) {
+            setTimeout(() => {
+              triggerFlight({
+                type: 'draw',
+                faceDown: true,
+                fromRect: drawRect,
+                toRect: oppRect,
+                startRotation: 0,
+                endRotation: (Math.random() - 0.5) * 10,
+                onComplete: () => {
+                  playSfx('draw');
+                },
+              });
+            }, i * 120);
+          }
+        }
+      });
+    }
+
+    prevPublicStateRef.current = publicState;
+    prevMyHandCountRef.current = view.myHand.length;
+  }, [publicState, view.myHand.length, animationIntensity, opponents, myPlayerId, triggerFlight, playSfx]);
+
+  // Handle Local Human Playing a Card with Flight Animation
   const handlePlayCard = useCallback(
     (card: CardDefinition) => {
       if (!isMyTurn) return;
       if (!playableCardIds.has(card.id)) return;
+      if (isCardInFlightRef.current) return;
 
       const isWild =
         card.color === 'wild' ||
         card.value === 'wild' ||
         card.value === 'wild_draw4';
 
-      if (isWild) {
+      if (animationIntensity === 'off') {
         multiplayerService.playCard(roomCode, card.id);
-      } else {
-        multiplayerService.playCard(roomCode, card.id);
+        setSelectedCardId(null);
+        playSfx(isWild ? 'wild' : ['skip', 'reverse', 'draw2'].includes(card.value) ? 'action' : 'card');
+        return;
       }
+
+      isCardInFlightRef.current = true;
       setSelectedCardId(null);
+      setHiddenCardIds(prev => new Set(prev).add(card.id));
+
+      const fromRect = getElementRect(`online-hand-card-${card.id}`, {
+        x: window.innerWidth / 2 - 52,
+        y: window.innerHeight - 150,
+        width: 104,
+        height: 145.6,
+      });
+
+      const toRect = getElementRect('discard-pile-target', {
+        x: window.innerWidth / 2 + 50,
+        y: window.innerHeight / 2 - 84,
+        width: 120,
+        height: 168,
+      });
+
+      const endRot = (Math.random() - 0.5) * 14;
+
+      triggerFlight({
+        type: 'play',
+        card,
+        fromRect,
+        toRect,
+        startRotation: 0,
+        endRotation: endRot,
+        onComplete: () => {
+          setHiddenCardIds(prev => {
+            const next = new Set(prev);
+            next.delete(card.id);
+            return next;
+          });
+          setDiscardLanded(true);
+          setTimeout(() => setDiscardLanded(false), 450);
+          multiplayerService.playCard(roomCode, card.id);
+          isCardInFlightRef.current = false;
+        },
+      });
+
+      playSfx(isWild ? 'wild' : ['skip', 'reverse', 'draw2'].includes(card.value) ? 'action' : 'card');
     },
-    [isMyTurn, playableCardIds, roomCode]
+    [isMyTurn, playableCardIds, animationIntensity, roomCode, triggerFlight, playSfx]
   );
 
   // Handle Color Choice
   const handleColorChoice = (color: CardColor) => {
     multiplayerService.chooseColor(roomCode, color);
+    playSfx('wild');
   };
 
   // Handle Draw Card
   const handleDrawCard = () => {
     if (!isMyTurn) return;
     multiplayerService.drawCard(roomCode);
+    playSfx('draw');
   };
 
   // Handle Pass Turn
   const handlePassTurn = () => {
     if (!isMyTurn) return;
     multiplayerService.passTurn(roomCode);
+    playSfx('card');
   };
 
   // Handle Declare UNO
   const handleDeclareUno = () => {
     multiplayerService.declareUno(roomCode);
+    playSfx('uno');
   };
 
   // Handle Catch UNO
   const handleCatchUno = (targetPlayerId: string) => {
     multiplayerService.catchUno(roomCode, targetPlayerId);
+    playSfx('action');
   };
 
   // Handle Card Click
@@ -147,6 +384,7 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
         handlePlayCard(card);
       } else {
         setSelectedCardId(card.id);
+        playSfx('card');
       }
     } else {
       setSelectedCardId(prev => (prev === card.id ? null : card.id));
@@ -164,7 +402,13 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
 
   return (
     <div className="game-container">
-      {/* Action Effects Floating Toast Banner */}
+      {/* 0. Card Flight Animation Layer (Top Layer) */}
+      <CardFlightLayer
+        flights={flights}
+        reducedMotion={animationIntensity === 'reduced'}
+      />
+
+      {/* 0. Action Effects Floating Toast Banner */}
       <ActionEffects
         notification={
           notification
@@ -179,10 +423,10 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
               }
             : null
         }
-        reducedMotion={false}
+        reducedMotion={animationIntensity === 'reduced'}
       />
 
-      {/* Victory Celebration upon Game Over */}
+      {/* 0. Victory Celebration upon Game Over */}
       {publicState.status === 'game_over' && publicState.winner && (
         <VictoryCelebration
           winner={{
@@ -208,11 +452,11 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
           }}
           onRestart={() => multiplayerService.requestRematch(roomCode)}
           onOpenSettings={onLeaveRoom}
-          reducedMotion={false}
+          reducedMotion={animationIntensity === 'reduced'}
         />
       )}
 
-      {/* 1. Game Top Status Bar (Matching Local Game) */}
+      {/* 1. Game Top Status Bar (Matching Local Game Controls) */}
       <div className="game-top-bar">
         <div
           style={{
@@ -249,6 +493,42 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
         </div>
 
         <div className="game-controls-group">
+          {/* Animation Intensity Cycle Control */}
+          <button
+            className="game-btn"
+            onClick={cycleAnimationIntensity}
+            title={`Animation Mode: ${animationIntensity.toUpperCase()} (Click to toggle)`}
+            data-testid="anim-toggle-btn"
+          >
+            {animationIntensity === 'full' ? (
+              <>
+                <Zap size={14} style={{ color: '#38BDF8' }} /> Anim: Full
+              </>
+            ) : animationIntensity === 'reduced' ? (
+              <>
+                <Zap size={14} style={{ color: '#F5A600' }} /> Anim: Reduced
+              </>
+            ) : (
+              <>
+                <ZapOff size={14} style={{ color: '#94A3B8' }} /> Anim: Off
+              </>
+            )}
+          </button>
+
+          {/* Sound Toggle */}
+          <button
+            className="game-btn"
+            onClick={() => setSoundEnabled(s => !s)}
+            title={soundEnabled ? 'Mute Sound Effects' : 'Enable Sound Effects'}
+          >
+            {soundEnabled ? (
+              <Volume2 size={14} style={{ color: '#10B981' }} />
+            ) : (
+              <VolumeX size={14} style={{ color: '#94A3B8' }} />
+            )}
+          </button>
+
+          {/* Leave Room Button */}
           <button
             className="game-btn danger"
             onClick={onLeaveRoom}
@@ -467,7 +747,7 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
             </div>
           </div>
 
-          {/* Cards Hand Container with Controlled Overlap */}
+          {/* Cards Hand Container with Controlled Overlap & Gap Closing */}
           <div
             id="human-hand-container"
             className="hand-cards-container"
@@ -480,12 +760,29 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
             {view.myHand.map((card, idx) => {
               const isPlayable = isMyTurn && playableCardIds.has(card.id);
               const isSelected = selectedCardId === card.id;
+              const isHidden = hiddenCardIds.has(card.id);
+
+              if (isHidden) {
+                // Invisible placeholder to keep hand layout stable during flight
+                return (
+                  <div
+                    key={card.id}
+                    style={{
+                      width: 'var(--hand-card-width)',
+                      height: 'var(--hand-card-height)',
+                      marginLeft: idx === 0 ? 0 : 'var(--hand-card-overlap)',
+                      visibility: 'hidden',
+                      flexShrink: 0,
+                    }}
+                  />
+                );
+              }
 
               return (
                 <div
                   key={card.id}
                   id={`online-hand-card-${card.id}`}
-                  className={`hand-card-wrapper ${isPlayable ? 'is-playable' : 'not-playable'} ${isSelected ? 'is-selected' : ''}`}
+                  className={`hand-card-wrapper ${isPlayable ? 'is-playable' : 'not-playable'} ${isSelected ? 'is-selected' : ''} ${isPlayable && animationIntensity === 'full' ? 'breathing' : ''}`}
                   style={{ zIndex: isSelected ? 150 : idx + 1 }}
                   onClick={() => handleCardClick(card, isPlayable)}
                   title={`${card.name} - ${isPlayable ? (isSelected ? 'Click again to play' : 'Click to select / play') : 'Cannot play on active color or top card'}`}
