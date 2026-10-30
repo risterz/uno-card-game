@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { CardDefinition, CardColor } from '../../types/card';
 import { Card } from '../Card';
 import { CardBack } from '../../components/CardBack';
-import { GameSettings, GameState, Player } from '../../engine/types';
+import { GameSettings, GameState, Player, DEFAULT_HOUSE_RULES } from '../../engine/types';
 import {
   createInitialGameState,
   playCard,
@@ -12,9 +12,11 @@ import {
   declareUno,
   catchUno,
   cancelColorChoice,
+  swapHands,
+  jumpInCard,
 } from '../../engine/game-state';
 import { computeAIMove, findOpponentToCatchUno } from '../../engine/ai';
-import { getPlayableCards } from '../../engine/rules';
+import { getPlayableCards, canJumpIn } from '../../engine/rules';
 import { FULL_DECK } from '../../data/deck';
 import { playSound, preloadSounds, SoundEffect } from '../../utils/audio';
 import { useAnimationSettings } from '../../utils/animation-settings';
@@ -53,6 +55,7 @@ export const GameBoard: React.FC = () => {
     playerCount: 4,
     gameMode: 'ai',
     aiDifficulty: 'medium',
+    houseRules: DEFAULT_HOUSE_RULES,
   });
 
   // Core game state
@@ -241,16 +244,17 @@ export const GameBoard: React.FC = () => {
     return !currentPlayer.isAI;
   }, [gameState.status, currentPlayer]);
 
-  // Human playable cards in hand
+  // Human playable cards in hand (factoring in stacking)
   const playableCardIds = useMemo(() => {
     if (!isHumanTurn) return new Set<string>();
     const playable = getPlayableCards(
       currentPlayer.hand,
       topDiscard,
-      gameState.activeColor
+      gameState.activeColor,
+      gameState.pendingDrawCount
     );
     return new Set(playable.map(c => c.id));
-  }, [isHumanTurn, currentPlayer.hand, topDiscard, gameState.activeColor]);
+  }, [isHumanTurn, currentPlayer.hand, topDiscard, gameState.activeColor, gameState.pendingDrawCount]);
 
   // Current viewing human player
   const viewingPlayer: Player = useMemo(() => {
@@ -259,6 +263,15 @@ export const GameBoard: React.FC = () => {
     }
     return gameState.players[0];
   }, [gameState.players, gameState.currentPlayerIndex, settings.gameMode]);
+
+  // Jump-In cards (exact color & value match when it's NOT your turn)
+  const jumpableCardIds = useMemo(() => {
+    if (!settings.houseRules?.enableJumpIn || isHumanTurn || !topDiscard || gameState.status !== 'playing') {
+      return new Set<string>();
+    }
+    const jumpable = viewingPlayer.hand.filter(c => canJumpIn(c, topDiscard, settings.houseRules));
+    return new Set(jumpable.map(c => c.id));
+  }, [settings.houseRules, isHumanTurn, topDiscard, gameState.status, viewingPlayer.hand]);
 
   // Non-mutating rendered subset of the existing hand for UI display testing
   const renderedHand: CardDefinition[] = useMemo(() => {
@@ -418,9 +431,36 @@ export const GameBoard: React.FC = () => {
     ]
   );
 
+  // Handle Jump-In Action
+  const handleJumpIn = (card: CardDefinition) => {
+    setGameState(prev => jumpInCard(prev, viewingPlayer.id, card.id));
+    playSfx('action');
+    setSelectedCardId(null);
+    triggerNotification({
+      type: 'skip',
+      sourcePlayerName: viewingPlayer.name,
+    });
+  };
+
+  // Handle 7-0 Hand Swap Action
+  const handleSevenSwap = (targetPlayerId: string) => {
+    setGameState(prev => swapHands(prev, viewingPlayer.id, targetPlayerId));
+    playSfx('wild');
+    const targetPlayer = gameState.players.find(p => p.id === targetPlayerId);
+    triggerNotification({
+      type: 'wild',
+      sourcePlayerName: viewingPlayer.name,
+      targetPlayerName: targetPlayer?.name,
+    });
+  };
+
   // Handle Card Click (Selection & Double-click to play)
   const handleCardClick = (card: CardDefinition, isPlayable: boolean) => {
     if (!isHumanTurn) {
+      if (canJumpIn(card, topDiscard, settings.houseRules)) {
+        handleJumpIn(card);
+        return;
+      }
       setSelectedCardId(prev => (prev === card.id ? null : card.id));
       return;
     }
@@ -1066,7 +1106,29 @@ export const GameBoard: React.FC = () => {
 
         {/* Region 2: Center Table Area (Draw Pile, Active Color Ring & Discard Pile) */}
         <div className="center-play-area local-center-play-area">
-          <div className="center-table-console local-center-table-console">
+          <div className="center-table-console local-center-table-console" style={{ position: 'relative' }}>
+            {/* Stacked Draw Penalty Warning */}
+            {gameState.pendingDrawCount > 0 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '-24px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'linear-gradient(135deg, #EF4444, #F97316)',
+                  color: '#FFFFFF',
+                  padding: '3px 12px',
+                  borderRadius: '9999px',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  boxShadow: '0 0 16px rgba(239, 68, 68, 0.7)',
+                  zIndex: 30,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                💥 STACKED PENALTY: +{gameState.pendingDrawCount} CARDS!
+              </div>
+            )}
             {/* Draw Pile */}
             <div className="pile-container">
               <span className="pile-label">Draw Pile</span>
@@ -1181,9 +1243,16 @@ export const GameBoard: React.FC = () => {
                   <button
                     className="game-btn draw-btn"
                     onClick={handleDrawCard}
-                    title="Draw 1 card from the draw pile"
+                    title={
+                      gameState.pendingDrawCount > 0
+                        ? `Draw ${gameState.pendingDrawCount} stacked penalty cards and forfeit turn`
+                        : "Draw 1 card from the draw pile"
+                    }
                   >
-                    <PlusCircle size={14} /> Draw Card
+                    <PlusCircle size={14} />{' '}
+                    {gameState.pendingDrawCount > 0
+                      ? `Draw +${gameState.pendingDrawCount}`
+                      : 'Draw Card'}
                   </button>
                   {selectedCard && playableCardIds.has(selectedCard.id) && (
                     <button
@@ -1194,6 +1263,29 @@ export const GameBoard: React.FC = () => {
                       <Play size={14} /> Play {selectedCard.name}
                     </button>
                   )}
+                </div>
+              )}
+
+              {/* Jump-In Action Button (out of turn) */}
+              {!isHumanTurn && jumpableCardIds.size > 0 && (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    className="game-btn"
+                    style={{
+                      background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
+                      color: '#FFFFFF',
+                      fontWeight: 800,
+                      boxShadow: '0 0 16px rgba(245, 158, 11, 0.5)',
+                      border: '1px solid #FDE68A',
+                    }}
+                    onClick={() => {
+                      const c = viewingPlayer.hand.find(card => jumpableCardIds.has(card.id));
+                      if (c) handleJumpIn(c);
+                    }}
+                    data-testid="jump-in-action-btn"
+                  >
+                    ⚡ JUMP IN! ({jumpableCardIds.size})
+                  </button>
                 </div>
               )}
             </div>
@@ -1236,6 +1328,7 @@ export const GameBoard: React.FC = () => {
           >
             {renderedHand.map((card, idx) => {
               const isPlayable = isHumanTurn && playableCardIds.has(card.id);
+              const isJumpable = !isHumanTurn && jumpableCardIds.has(card.id);
               const isSelected = selectedCardId === card.id;
               const isHidden = hiddenCardIds.has(card.id);
 
@@ -1259,17 +1352,45 @@ export const GameBoard: React.FC = () => {
                 <div
                   key={card.id}
                   id={`hand-card-${card.id}`}
-                  className={`hand-card-wrapper ${isPlayable ? 'is-playable' : 'not-playable'} ${isSelected ? 'is-selected' : ''} ${isPlayable && animationIntensity === 'full' ? 'breathing' : ''}`}
+                  className={`hand-card-wrapper ${isPlayable ? 'is-playable' : isJumpable ? 'is-jumpable' : 'not-playable'} ${isSelected ? 'is-selected' : ''} ${isPlayable && animationIntensity === 'full' ? 'breathing' : ''}`}
                   style={{ zIndex: isSelected ? 150 : idx + 1 }}
                   onClick={() => handleCardClick(card, isPlayable)}
-                  title={`${card.name} - ${isPlayable ? (isSelected ? 'Click again to play' : 'Click to select / play') : 'Cannot play on active color or top card'}`}
+                  title={
+                    isJumpable
+                      ? `⚡ JUMP IN! Exact matching ${card.name} - Click to play out of turn!`
+                      : `${card.name} - ${isPlayable ? (isSelected ? 'Click again to play' : 'Click to select / play') : 'Cannot play on active color or top card'}`
+                  }
                 >
                   {isPlayable && <span className="playable-dot" />}
+                  {isJumpable && (
+                    <span
+                      className="jumpin-dot"
+                      style={{
+                        position: 'absolute',
+                        top: '-8px',
+                        right: '-6px',
+                        background: '#F59E0B',
+                        color: '#000',
+                        borderRadius: '50%',
+                        width: '18px',
+                        height: '18px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '11px',
+                        fontWeight: 900,
+                        boxShadow: '0 0 8px #F59E0B',
+                        zIndex: 10,
+                      }}
+                    >
+                      ⚡
+                    </span>
+                  )}
                   <Card
                     card={card}
                     size="hand"
                     selected={isSelected}
-                    interactive={isPlayable}
+                    interactive={isPlayable || isJumpable}
                   />
                 </div>
               );
@@ -1323,6 +1444,63 @@ export const GameBoard: React.FC = () => {
               >
                 Cancel
               </button>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* 7-0 Hand Swap Modal */}
+        {gameState.status === 'awaiting_seven_swap' && isHumanTurn && (
+          <motion.div
+            className="color-choice-modal"
+            variants={modalBackdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            <motion.div
+              className="color-choice-box"
+              style={{ maxWidth: '420px', padding: '24px' }}
+              variants={modalDialogVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <h3 className="color-choice-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                🔄 7-0 Rule: Swap Hands!
+              </h3>
+              <p className="color-choice-subtitle">
+                You played a 7! Select any opponent to swap your entire hand with:
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>
+                {gameState.players
+                  .filter(p => p.id !== viewingPlayer.id)
+                  .map(opp => (
+                    <button
+                      key={opp.id}
+                      className="action-btn primary"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '12px 16px',
+                        background: 'rgba(30, 41, 59, 0.95)',
+                        border: '1px solid rgba(56, 189, 248, 0.4)',
+                        borderRadius: '12px',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => handleSevenSwap(opp.id)}
+                      data-testid={`swap-hands-btn-${opp.id}`}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 700 }}>
+                        <span style={{ fontSize: '22px' }}>{opp.avatar}</span>
+                        <span style={{ fontSize: '15px' }}>{opp.name}</span>
+                      </span>
+                      <span style={{ fontSize: '12px', background: 'rgba(56, 189, 248, 0.25)', padding: '3px 10px', borderRadius: '12px', color: '#38BDF8', fontWeight: 700 }}>
+                        {opp.hand.length} cards
+                      </span>
+                    </button>
+                  ))}
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -1507,6 +1685,133 @@ export const GameBoard: React.FC = () => {
                         {item.label}
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                {/* House Rules & Modifiers */}
+                <div style={{ width: '100%', marginTop: '4px' }}>
+                  <label
+                    className="filter-label"
+                    style={{
+                      marginBottom: '10px',
+                      color: '#38BDF8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <Sparkles size={14} /> Custom House Rules & Modifiers:
+                  </label>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                      background: 'rgba(15, 23, 42, 0.6)',
+                      padding: '12px 14px',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                    }}
+                  >
+                    <label
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontSize: '13px',
+                        color: '#E2E8F0',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div>
+                        <strong style={{ color: '#F87171' }}>💥 Draw Stacking (+2 / +4)</strong>
+                        <div style={{ fontSize: '11px', color: '#94A3B8' }}>
+                          Chain +2 on +2, or +4 on +4 to pass penalty onto the next player
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={settings.houseRules?.enableStacking ?? true}
+                        onChange={e =>
+                          setSettings(s => ({
+                            ...s,
+                            houseRules: {
+                              ...DEFAULT_HOUSE_RULES,
+                              ...s.houseRules,
+                              enableStacking: e.target.checked,
+                            },
+                          }))
+                        }
+                      />
+                    </label>
+
+                    <label
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontSize: '13px',
+                        color: '#E2E8F0',
+                        cursor: 'pointer',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                        paddingTop: '8px',
+                      }}
+                    >
+                      <div>
+                        <strong style={{ color: '#38BDF8' }}>🔄 7-0 Rule</strong>
+                        <div style={{ fontSize: '11px', color: '#94A3B8' }}>
+                          Playing 7 swaps hands with chosen player; playing 0 rotates all hands
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={settings.houseRules?.enableSevenZero ?? true}
+                        onChange={e =>
+                          setSettings(s => ({
+                            ...s,
+                            houseRules: {
+                              ...DEFAULT_HOUSE_RULES,
+                              ...s.houseRules,
+                              enableSevenZero: e.target.checked,
+                            },
+                          }))
+                        }
+                      />
+                    </label>
+
+                    <label
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontSize: '13px',
+                        color: '#E2E8F0',
+                        cursor: 'pointer',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                        paddingTop: '8px',
+                      }}
+                    >
+                      <div>
+                        <strong style={{ color: '#FBBF24' }}>⚡ Jump-In Rule</strong>
+                        <div style={{ fontSize: '11px', color: '#94A3B8' }}>
+                          Play identical cards (same color & face) anytime out of turn to take over
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={settings.houseRules?.enableJumpIn ?? true}
+                        onChange={e =>
+                          setSettings(s => ({
+                            ...s,
+                            houseRules: {
+                              ...DEFAULT_HOUSE_RULES,
+                              ...s.houseRules,
+                              enableJumpIn: e.target.checked,
+                            },
+                          }))
+                        }
+                      />
+                    </label>
                   </div>
                 </div>
 

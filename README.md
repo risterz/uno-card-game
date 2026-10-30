@@ -53,6 +53,11 @@
 ### 6. 📱 100% Mobile & Touch Responsive
 - Optimized for mobile viewports (down to 360px width) with touch ergonomics, fanned card overlapping, smooth horizontal scroll gestures, and compact header controls.
 
+### 7. 💥 Custom House Rules & Modifiers (New!)
+- **💥 Draw Stacking (+2 / +4):** Stack a Draw Two on a Draw Two, or Wild Draw Four on Wild Draw Four. The penalty accumulates (+2, +4, +6...) and passes to the next player until someone cannot stack and draws the entire sum.
+- **🔄 7-0 Rule:** Playing any **7** lets you swap your hand with any chosen opponent. Playing any **0** rotates all players' hands in the active game direction.
+- **⚡ Jump-In Rule:** If you hold a card that matches the top discard in BOTH color and value, play it immediately out of turn to hijack the round.
+
 ---
 
 ## 🏗️ Architecture & Technology Stack

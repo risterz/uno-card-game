@@ -17,6 +17,7 @@ export type GameStatus =
   | 'playing'
   | 'awaiting_color_choice'
   | 'drawn_card_decision'
+  | 'awaiting_seven_swap'
   | 'game_over';
 
 export interface LogEntry {
@@ -27,10 +28,23 @@ export interface LogEntry {
   color?: CardColor;
 }
 
+export interface HouseRules {
+  enableStacking: boolean;   // +2 on +2, +4 on +4
+  enableSevenZero: boolean;  // 7 swaps hands, 0 rotates hands
+  enableJumpIn: boolean;     // exact duplicate played out of turn
+}
+
+export const DEFAULT_HOUSE_RULES: HouseRules = {
+  enableStacking: false,
+  enableSevenZero: false,
+  enableJumpIn: false,
+};
+
 export interface GameSettings {
   playerCount: number; // 2 to 5
   gameMode: GameMode;
   aiDifficulty: AIDifficulty;
+  houseRules?: HouseRules;
 }
 
 export interface GameState {
@@ -44,6 +58,8 @@ export interface GameState {
   winner: Player | null;
   pendingCard: CardDefinition | null; // Card played that requires color choice
   drawnCard: CardDefinition | null; // Card drawn in drawn_card_decision phase
+  pendingDrawCount: number; // Stacking accumulation (+2, +4, +6)
+  pendingSevenSwapPlayerId: string | null; // Player awaiting 7-swap target
   lastActionMessage: string;
   logs: LogEntry[];
   settings: GameSettings;

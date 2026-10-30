@@ -77,6 +77,8 @@ function createScenarioState(options: {
     winner: null,
     pendingCard: null,
     drawnCard: null,
+    pendingDrawCount: 0,
+    pendingSevenSwapPlayerId: null,
     lastActionMessage: 'Test scenario',
     logs: [],
     settings: {

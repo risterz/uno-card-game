@@ -33,7 +33,7 @@ export class EasyAIStrategy implements AIStrategy {
     }
 
     const topDiscard = state.discardPile[state.discardPile.length - 1];
-    const playable = getPlayableCards(ai.hand, topDiscard, state.activeColor);
+    const playable = getPlayableCards(ai.hand, topDiscard, state.activeColor, state.pendingDrawCount);
 
     // If no legal card, must draw
     if (playable.length === 0) {

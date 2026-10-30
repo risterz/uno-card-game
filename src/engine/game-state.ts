@@ -1,7 +1,7 @@
 import { CardColor, CardDefinition } from '../types/card';
 import { FULL_DECK } from '../data/deck';
-import { GameSettings, GameState, LogEntry, Player } from './types';
-import { getNextPlayerIndex, isCardPlayable, calculateRoundScore } from './rules';
+import { GameSettings, GameState, LogEntry, Player, DEFAULT_HOUSE_RULES } from './types';
+import { getNextPlayerIndex, isCardPlayable, calculateRoundScore, canJumpIn } from './rules';
 
 /**
  * Modern Fisher-Yates shuffle with optional RNG function.
@@ -114,9 +114,14 @@ export function createInitialGameState(
     winner: null,
     pendingCard: null,
     drawnCard: null,
+    pendingDrawCount: 0,
+    pendingSevenSwapPlayerId: null,
     lastActionMessage: `Turn: ${players[currentPlayerIndex].name}`,
     logs: initialLogs,
-    settings,
+    settings: {
+      ...settings,
+      houseRules: settings.houseRules || DEFAULT_HOUSE_RULES,
+    },
     turnCount: 1,
   };
 }
@@ -177,8 +182,8 @@ export function playCard(
   const card = currentPlayer.hand[cardIndex];
   const topDiscard = prevState.discardPile[prevState.discardPile.length - 1];
 
-  // Verify playability
-  if (!isCardPlayable(card, topDiscard, prevState.activeColor)) {
+  // Verify playability (including stacking constraints)
+  if (!isCardPlayable(card, topDiscard, prevState.activeColor, prevState.pendingDrawCount)) {
     return prevState;
   }
 
@@ -243,9 +248,48 @@ export function playCard(
     activePlayer.unoDeclared = false;
   }
 
+  // House Rule: 7-0 Rule
+  const enableSevenZero = state.settings.houseRules?.enableSevenZero;
+  if (enableSevenZero && card.value === '7') {
+    if (!activePlayer.isAI && state.players.length > 1) {
+      // Human player: await target player selection
+      state.status = 'awaiting_seven_swap';
+      state.pendingSevenSwapPlayerId = activePlayer.id;
+      state.lastActionMessage = `${activePlayer.name} played 7! Choose an opponent to swap hands with.`;
+      state.logs.push(createLog(`🔄 ${activePlayer.name} played 7! Choosing opponent to swap hands with.`, 'action'));
+      return state;
+    } else if (activePlayer.isAI && state.players.length > 1) {
+      // AI chooses opponent with fewest cards
+      const opponents = state.players.filter(p => p.id !== activePlayer.id);
+      opponents.sort((a, b) => a.hand.length - b.hand.length);
+      const target = opponents[0];
+      if (target && target.hand.length < activePlayer.hand.length) {
+        const temp = activePlayer.hand;
+        activePlayer.hand = target.hand;
+        target.hand = temp;
+        activePlayer.unoDeclared = false;
+        target.unoDeclared = false;
+        state.logs.push(createLog(`🔄 ${activePlayer.name} strategically swapped hands with ${target.name}!`, 'action'));
+      }
+    }
+  } else if (enableSevenZero && card.value === '0') {
+    // Rotate all player hands in current direction
+    const n = state.players.length;
+    const hands = state.players.map(p => p.hand);
+    for (let i = 0; i < n; i++) {
+      const fromIdx = state.direction === 1
+        ? (i - 1 + n) % n
+        : (i + 1) % n;
+      state.players[i].hand = hands[fromIdx];
+      state.players[i].unoDeclared = false;
+    }
+    state.logs.push(createLog(`🌪️ 0 Played! All player hands rotated ${state.direction === 1 ? 'clockwise' : 'counter-clockwise'}!`, 'action'));
+  }
+
   // Apply Action Effects & Advance Turn
   const playerCount = state.players.length;
   let step = 1;
+  const enableStacking = state.settings.houseRules?.enableStacking;
 
   if (card.value === 'skip') {
     step = 2;
@@ -264,23 +308,37 @@ export function playCard(
       step = 1;
     }
   } else if (card.value === 'draw2') {
-    step = 2;
-    const victimIndex = getNextPlayerIndex(state.currentPlayerIndex, state.direction, playerCount, 1);
-    const victim = state.players[victimIndex];
-    ensureDrawPileCards(state, 2, rng);
-    const drawn = state.drawPile.splice(0, Math.min(2, state.drawPile.length));
-    victim.hand.push(...drawn);
-    victim.unoDeclared = false;
-    state.logs.push(createLog(`💥 ${victim.name} drew 2 cards and was skipped!`, 'action'));
+    if (enableStacking) {
+      // Stacking enabled: Add +2 to pendingDrawCount and pass to next player without skipping
+      state.pendingDrawCount = (state.pendingDrawCount || 0) + 2;
+      step = 1;
+      state.logs.push(createLog(`💥 ${activePlayer.name} stacked Draw Two! Total penalty is now +${state.pendingDrawCount}!`, 'action'));
+    } else {
+      step = 2;
+      const victimIndex = getNextPlayerIndex(state.currentPlayerIndex, state.direction, playerCount, 1);
+      const victim = state.players[victimIndex];
+      ensureDrawPileCards(state, 2, rng);
+      const drawn = state.drawPile.splice(0, Math.min(2, state.drawPile.length));
+      victim.hand.push(...drawn);
+      victim.unoDeclared = false;
+      state.logs.push(createLog(`💥 ${victim.name} drew 2 cards and was skipped!`, 'action'));
+    }
   } else if (card.value === 'wild_draw4') {
-    step = 2;
-    const victimIndex = getNextPlayerIndex(state.currentPlayerIndex, state.direction, playerCount, 1);
-    const victim = state.players[victimIndex];
-    ensureDrawPileCards(state, 4, rng);
-    const drawn = state.drawPile.splice(0, Math.min(4, state.drawPile.length));
-    victim.hand.push(...drawn);
-    victim.unoDeclared = false;
-    state.logs.push(createLog(`⚡ ${victim.name} drew 4 cards and was skipped!`, 'action'));
+    if (enableStacking) {
+      // Stacking enabled: Add +4 to pendingDrawCount and pass to next player
+      state.pendingDrawCount = (state.pendingDrawCount || 0) + 4;
+      step = 1;
+      state.logs.push(createLog(`⚡ ${activePlayer.name} stacked Wild Draw Four! Total penalty is now +${state.pendingDrawCount}!`, 'action'));
+    } else {
+      step = 2;
+      const victimIndex = getNextPlayerIndex(state.currentPlayerIndex, state.direction, playerCount, 1);
+      const victim = state.players[victimIndex];
+      ensureDrawPileCards(state, 4, rng);
+      const drawn = state.drawPile.splice(0, Math.min(4, state.drawPile.length));
+      victim.hand.push(...drawn);
+      victim.unoDeclared = false;
+      state.logs.push(createLog(`⚡ ${victim.name} drew 4 cards and was skipped!`, 'action'));
+    }
   }
 
   // Advance to next active player
@@ -315,6 +373,22 @@ export function drawCard(prevState: GameState, playerId: string, rng = Math.rand
     discardPile: [...prevState.discardPile],
     logs: [...prevState.logs],
   };
+
+  // Handling active stacked draw penalty (+2/+4 accumulation)
+  if (prevState.pendingDrawCount > 0) {
+    const penaltyCount = prevState.pendingDrawCount;
+    ensureDrawPileCards(state, penaltyCount, rng);
+    const drawn = state.drawPile.splice(0, Math.min(penaltyCount, state.drawPile.length));
+    const activePlayer = state.players[state.currentPlayerIndex];
+    activePlayer.hand.push(...drawn);
+    activePlayer.unoDeclared = false;
+    state.pendingDrawCount = 0;
+    state.logs.push(createLog(`💥 ${activePlayer.name} drew ${drawn.length} cards from stacked penalty and forfeited turn!`, 'action'));
+    state.currentPlayerIndex = getNextPlayerIndex(state.currentPlayerIndex, state.direction, state.players.length, 1);
+    state.turnCount++;
+    state.lastActionMessage = `Turn: ${state.players[state.currentPlayerIndex].name}`;
+    return state;
+  }
 
   ensureDrawPileCards(state, 1, rng);
 
@@ -460,6 +534,172 @@ export function catchUno(prevState: GameState, catcherId: string, targetId: stri
       'uno'
     )
   );
+
+  return state;
+}
+
+/**
+ * 7-0 Rule: Executes hand swap when a human player chooses a target.
+ */
+export function swapHands(
+  prevState: GameState,
+  activePlayerId: string,
+  targetPlayerId: string
+): GameState {
+  if (prevState.status !== 'awaiting_seven_swap') {
+    return prevState;
+  }
+
+  const activeIdx = prevState.players.findIndex(p => p.id === activePlayerId);
+  const targetIdx = prevState.players.findIndex(p => p.id === targetPlayerId);
+
+  if (activeIdx === -1 || targetIdx === -1 || activeIdx === targetIdx) {
+    return prevState;
+  }
+
+  const state: GameState = {
+    ...prevState,
+    players: prevState.players.map(p => ({
+      ...p,
+      hand: [...p.hand],
+    })),
+    logs: [...prevState.logs],
+    pendingSevenSwapPlayerId: null,
+    status: 'playing',
+  };
+
+  const activeP = state.players[activeIdx];
+  const targetP = state.players[targetIdx];
+
+  const tempHand = activeP.hand;
+  activeP.hand = targetP.hand;
+  targetP.hand = tempHand;
+
+  activeP.unoDeclared = false;
+  targetP.unoDeclared = false;
+
+  state.logs.push(createLog(`🔄 ${activeP.name} swapped hands with ${targetP.name}!`, 'action'));
+
+  // Advance turn to next player
+  state.currentPlayerIndex = getNextPlayerIndex(state.currentPlayerIndex, state.direction, state.players.length, 1);
+  state.turnCount++;
+  state.lastActionMessage = `Turn: ${state.players[state.currentPlayerIndex].name}`;
+
+  return state;
+}
+
+/**
+ * Jump-In Rule: Play an exact duplicate card out of turn to take over the round.
+ */
+export function jumpInCard(
+  prevState: GameState,
+  playerId: string,
+  cardId: string,
+  rng = Math.random
+): GameState {
+  if (prevState.status !== 'playing' || !prevState.settings.houseRules?.enableJumpIn) {
+    return prevState;
+  }
+
+  const jumpingIndex = prevState.players.findIndex(p => p.id === playerId);
+  if (jumpingIndex === -1) {
+    return prevState;
+  }
+
+  const jumpingPlayer = prevState.players[jumpingIndex];
+  const cardIndex = jumpingPlayer.hand.findIndex(c => c.id === cardId);
+  if (cardIndex === -1) {
+    return prevState;
+  }
+
+  const card = jumpingPlayer.hand[cardIndex];
+  const topDiscard = prevState.discardPile[prevState.discardPile.length - 1];
+
+  if (!canJumpIn(card, topDiscard, prevState.settings.houseRules)) {
+    return prevState;
+  }
+
+  // Cloned state
+  const state: GameState = {
+    ...prevState,
+    players: prevState.players.map(p => ({
+      ...p,
+      hand: [...p.hand],
+    })),
+    drawPile: [...prevState.drawPile],
+    discardPile: [...prevState.discardPile],
+    logs: [...prevState.logs],
+  };
+
+  const activeJumper = state.players[jumpingIndex];
+  activeJumper.hand.splice(cardIndex, 1);
+  state.discardPile.push(card);
+  state.activeColor = card.color;
+
+  state.logs.push(createLog(`⚡ ${activeJumper.name} JUMPED IN out of turn with matching ${card.name}!`, 'action', card.color));
+
+  // Check Win Condition
+  if (activeJumper.hand.length === 0) {
+    state.status = 'game_over';
+    state.winner = activeJumper;
+    const losingHands = state.players.filter(p => p.id !== activeJumper.id).map(p => p.hand);
+    const score = calculateRoundScore(losingHands);
+    state.lastActionMessage = `🎉 ${activeJumper.name} wins via Jump-In! Total score: ${score} points!`;
+    state.logs.push(createLog(`🎉 ${activeJumper.name} won the game with ${score} points!`, 'win'));
+    return state;
+  }
+
+  // Check UNO safety
+  if (activeJumper.hand.length === 1) {
+    if (activeJumper.unoDeclared) {
+      state.logs.push(createLog(`🔔 ${activeJumper.name} has ONE card remaining (UNO safe)!`, 'uno'));
+    } else {
+      state.logs.push(createLog(`⚠️ ${activeJumper.name} has ONE card remaining but did NOT call UNO!`, 'uno'));
+    }
+  } else {
+    activeJumper.unoDeclared = false;
+  }
+
+  // Seize turn: current turn becomes the jumper's
+  state.currentPlayerIndex = jumpingIndex;
+  const playerCount = state.players.length;
+  let step = 1;
+
+  if (card.value === 'skip') {
+    step = 2;
+    const skippedPlayerIndex = getNextPlayerIndex(jumpingIndex, state.direction, playerCount, 1);
+    state.logs.push(createLog(`⏭️ ${state.players[skippedPlayerIndex].name} was skipped by Jump-In!`, 'action'));
+  } else if (card.value === 'reverse') {
+    if (playerCount === 2) {
+      step = 2;
+      const other = (jumpingIndex + 1) % 2;
+      state.logs.push(createLog(`🔄 Jump-In Reverse in 2-player skips ${state.players[other].name}!`, 'action'));
+    } else {
+      state.direction = state.direction === 1 ? -1 : 1;
+      state.logs.push(createLog(`🔄 Jump-In Reverse reversed direction to ${state.direction === 1 ? 'clockwise' : 'counter-clockwise'}!`, 'action'));
+      step = 1;
+    }
+  } else if (card.value === 'draw2') {
+    if (state.settings.houseRules?.enableStacking) {
+      state.pendingDrawCount = (state.pendingDrawCount || 0) + 2;
+      step = 1;
+      state.logs.push(createLog(`💥 Jump-In Draw Two increased stacked penalty to +${state.pendingDrawCount}!`, 'action'));
+    } else {
+      step = 2;
+      const victimIndex = getNextPlayerIndex(jumpingIndex, state.direction, playerCount, 1);
+      const victim = state.players[victimIndex];
+      ensureDrawPileCards(state, 2, rng);
+      const drawn = state.drawPile.splice(0, Math.min(2, state.drawPile.length));
+      victim.hand.push(...drawn);
+      victim.unoDeclared = false;
+      state.logs.push(createLog(`💥 ${victim.name} drew 2 cards and was skipped by Jump-In!`, 'action'));
+    }
+  }
+
+  // Advance turn from jumping player
+  state.currentPlayerIndex = getNextPlayerIndex(jumpingIndex, state.direction, playerCount, step);
+  state.turnCount++;
+  state.lastActionMessage = `Turn: ${state.players[state.currentPlayerIndex].name}`;
 
   return state;
 }
