@@ -3,12 +3,13 @@
  * Plays looping casual background music with HTML5 Audio & Web Audio fallback.
  */
 
-type BgmListener = (isPlaying: boolean, volume: number) => void;
+type BgmListener = (isPlaying: boolean, volume: number, theme: string) => void;
 
 class BgmManager {
   private audio: HTMLAudioElement | null = null;
   private isPlaying = false;
   private volume = 0.35;
+  private theme: string = 'classic';
   private listeners: Set<BgmListener> = new Set();
   private userInteractionBound = false;
 
@@ -16,6 +17,11 @@ class BgmManager {
     if (typeof window !== 'undefined') {
       const savedEnabled = localStorage.getItem('uno_bgm_enabled');
       const savedVol = localStorage.getItem('uno_bgm_volume');
+      const savedTheme = localStorage.getItem('uno_selected_card_theme');
+
+      if (savedTheme) {
+        this.theme = savedTheme;
+      }
 
       if (savedVol !== null) {
         const parsed = parseFloat(savedVol);
@@ -33,10 +39,14 @@ class BgmManager {
     }
   }
 
+  private getAudioSrc(theme: string): string {
+    return theme === 'halloween' ? '/sounds/bgm-halloween.wav' : '/sounds/bgm-casual.wav';
+  }
+
   private initAudio() {
     if (typeof Audio === 'undefined') return;
     try {
-      this.audio = new Audio('/sounds/bgm-casual.wav');
+      this.audio = new Audio(this.getAudioSrc(this.theme));
       this.audio.loop = true;
       this.audio.volume = this.volume;
       this.audio.preload = 'auto';
@@ -110,6 +120,28 @@ class BgmManager {
     }
   }
 
+  public setTheme(themeId: string) {
+    if (this.theme === themeId) return;
+    this.theme = themeId;
+    const wasPlaying = this.isPlaying;
+    const newSrc = this.getAudioSrc(themeId);
+
+    if (this.audio) {
+      this.audio.src = newSrc;
+      this.audio.load();
+      if (wasPlaying) {
+        this.audio.play().catch(() => {
+          this.bindFirstInteraction();
+        });
+      }
+    }
+    this.notify();
+  }
+
+  public getTheme(): string {
+    return this.theme;
+  }
+
   public setVolume(vol: number) {
     this.volume = Math.max(0, Math.min(1, vol));
     if (this.audio) {
@@ -129,14 +161,14 @@ class BgmManager {
 
   public subscribe(listener: BgmListener): () => void {
     this.listeners.add(listener);
-    listener(this.isPlaying, this.volume);
+    listener(this.isPlaying, this.volume, this.theme);
     return () => {
       this.listeners.delete(listener);
     };
   }
 
   private notify() {
-    this.listeners.forEach(fn => fn(this.isPlaying, this.volume));
+    this.listeners.forEach(fn => fn(this.isPlaying, this.volume, this.theme));
   }
 }
 

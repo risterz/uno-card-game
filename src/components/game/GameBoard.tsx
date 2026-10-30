@@ -30,6 +30,8 @@ import { ActionEffects } from './ActionEffects';
 import { useNotificationManager } from '../../utils/useNotificationManager';
 import { VictoryCelebration } from './VictoryCelebration';
 import { ThemeSelector } from '../ThemeSelector';
+import { EmoteBar } from './EmoteBar';
+import { FloatingEmoteBadge, FloatingEmote } from './FloatingEmotesOverlay';
 import {
   RotateCw,
   Settings,
@@ -98,6 +100,21 @@ export const GameBoard: React.FC = () => {
       playSound(type, soundEnabled);
     },
     [soundEnabled]
+  );
+
+  // Active in-game floating emotes state
+  const [floatingEmotes, setFloatingEmotes] = useState<FloatingEmote[]>([]);
+
+  const triggerLocalEmote = useCallback(
+    (targetId: string, emote: string) => {
+      const id = `local-em-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      setFloatingEmotes(prev => [...prev, { id, targetId, emote, timestamp: Date.now() }]);
+      playSfx('action');
+      setTimeout(() => {
+        setFloatingEmotes(prev => prev.filter(e => e.id !== id));
+      }, 2500);
+    },
+    [playSfx]
   );
 
   // Play winning fanfare sound effect upon game over
@@ -697,6 +714,11 @@ export const GameBoard: React.FC = () => {
             setTimeout(() => setDiscardLanded(false), 450);
             executePlayCardAction(cardToPlay, move.chosenColor);
             setBotStatus(prev => ({ ...prev, [activeBot.id]: '' }));
+            if (cardToPlay.value === 'wild_draw4') {
+              setTimeout(() => triggerLocalEmote(activeBot.id, Math.random() > 0.5 ? '🔥' : '😂'), 300);
+            } else if (cardToPlay.value === 'skip' && Math.random() < 0.4) {
+              setTimeout(() => triggerLocalEmote(activeBot.id, '👋'), 300);
+            }
           },
         });
         return;
@@ -1033,7 +1055,10 @@ export const GameBoard: React.FC = () => {
                 {/* 1. Header: Avatar & Name on left, Card count badge on right */}
                 <div className="opponent-header">
                   <div className="opponent-header-left">
-                    <span className="opponent-avatar">{opp.avatar}</span>
+                    <div style={{ position: 'relative', display: 'inline-flex' }}>
+                      <FloatingEmoteBadge emotes={floatingEmotes} targetId={opp.id} />
+                      <span className="opponent-avatar">{opp.avatar}</span>
+                    </div>
                     <span className="opponent-name" title={opp.name}>
                       {opp.name}
                     </span>
@@ -1189,7 +1214,10 @@ export const GameBoard: React.FC = () => {
           >
             {/* Left: Player Profile & Turn Indicator */}
             <div className="hand-player-info">
-              <span className="opponent-avatar">{viewingPlayer.avatar}</span>
+              <div style={{ position: 'relative', display: 'inline-flex' }}>
+                <FloatingEmoteBadge emotes={floatingEmotes} targetId={viewingPlayer.id} />
+                <span className="opponent-avatar">{viewingPlayer.avatar}</span>
+              </div>
               <span className="player-name-tag">
                 {viewingPlayer.name} ({viewingPlayer.hand.length} cards)
               </span>
@@ -1290,8 +1318,9 @@ export const GameBoard: React.FC = () => {
               )}
             </div>
 
-            {/* Right: UNO Shout Button */}
-            <div className="hand-right-actions">
+            {/* Right: UNO Shout Button & Emote Reactions */}
+            <div className="hand-right-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <EmoteBar onSendEmote={emote => triggerLocalEmote(viewingPlayer.id, emote)} />
               {isHumanTurn && (
                 <button
                   className={`uno-shout-btn ${viewingPlayer.unoDeclared ? 'declared' : ''} ${viewingPlayer.hand.length <= 2 && !viewingPlayer.unoDeclared ? 'pulse-ready' : ''}`}

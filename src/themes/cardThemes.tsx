@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { CardDefinition } from '../types/card';
 import { generateCardBackSvg as generateClassicCardBackSvg, generateCardSvg as generateClassicCardSvg } from '../utils/svg-card-generator';
 import { generateHalloweenCardBackSvg, generateHalloweenCardSvg } from './halloween/halloween-generator';
+import { bgmManager } from '../utils/bgm';
 
 export type CardThemeId = 'classic' | 'halloween';
 
@@ -79,8 +80,13 @@ export const CardThemeProvider: React.FC<{ children: ReactNode }> = ({ children 
     return 'classic';
   });
 
+  useEffect(() => {
+    bgmManager.setTheme(currentTheme);
+  }, [currentTheme]);
+
   const setTheme = (theme: CardThemeId) => {
     setCurrentThemeState(theme);
+    bgmManager.setTheme(theme);
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem(STORAGE_KEY, theme);

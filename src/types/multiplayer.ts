@@ -34,6 +34,7 @@ export interface PublicGameState {
   turnTimeoutSeconds: number; // Duration of each player round in seconds (e.g. 20s)
   turnExpiresAt: number | null; // Timestamp (ms) when active player's round expires
   serverTime?: number; // Authoritative server timestamp (ms) for clock drift compensation
+  spectatorCount?: number; // Active spectators watching the match
 }
 
 export interface PlayerPrivateView {
@@ -42,6 +43,20 @@ export interface PlayerPrivateView {
   myHand: CardDefinition[];
   drawnCard: CardDefinition | null; // Only populated for the current player during drawn_card_decision
   publicState: PublicGameState;
+  isSpectator?: boolean;
+}
+
+export interface EmotePayload {
+  id: string;
+  playerId: string;
+  playerName: string;
+  emote: string;
+  timestamp: number;
+  isSpectator?: boolean;
+}
+
+export interface SendEmoteRequest {
+  emote: string;
 }
 
 export interface ActionNotificationPayload {
@@ -60,6 +75,7 @@ export interface JoinRoomRequest {
   roomCode: string;
   playerName: string;
   avatar?: string;
+  isSpectator?: boolean;
 }
 
 export interface ReconnectSessionRequest {

@@ -30,7 +30,10 @@ import {
   Volume2,
   VolumeX,
   Timer,
+  Eye,
 } from 'lucide-react';
+import { EmoteBar } from '../game/EmoteBar';
+import { FloatingEmoteBadge, FloatingEmote } from '../game/FloatingEmotesOverlay';
 import '../../styles/game.css';
 import '../../styles/animations.css';
 import '../../styles/multiplayer.css';
@@ -134,6 +137,35 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
       playSound(type, soundEnabled);
     },
     [soundEnabled]
+  );
+
+  // Floating In-Game Emotes State
+  const [floatingEmotes, setFloatingEmotes] = useState<FloatingEmote[]>([]);
+
+  useEffect(() => {
+    const unsub = multiplayerService.onPlayerEmote(payload => {
+      setFloatingEmotes(prev => [
+        ...prev,
+        {
+          id: payload.id,
+          targetId: payload.playerId,
+          emote: payload.emote,
+          timestamp: payload.timestamp,
+        },
+      ]);
+      playSfx('action');
+      setTimeout(() => {
+        setFloatingEmotes(prev => prev.filter(e => e.id !== payload.id));
+      }, 2500);
+    });
+    return unsub;
+  }, [playSfx]);
+
+  const handleSendEmote = useCallback(
+    (emote: string) => {
+      multiplayerService.sendEmote(view.publicState.roomCode, emote);
+    },
+    [view.publicState.roomCode]
   );
 
   const publicState = view.publicState;
@@ -574,16 +606,49 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
               <span>{secondsLeft}s</span>
             </span>
           )}
-          <span
-            className="difficulty-badge"
-            style={{
-              borderColor: 'rgba(56, 189, 248, 0.4)',
-              color: '#38BDF8',
-              background: 'rgba(56, 189, 248, 0.1)',
-            }}
-          >
-            Live Match
-          </span>
+          {publicState.spectatorCount !== undefined && publicState.spectatorCount > 0 && (
+            <span
+              className="spectator-counter-badge"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '2px 8px',
+                borderRadius: '6px',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: '#C084FC',
+                background: 'rgba(168, 85, 247, 0.15)',
+                border: '1px solid rgba(168, 85, 247, 0.4)',
+              }}
+              title="Spectators actively watching"
+            >
+              <Eye size={12} /> {publicState.spectatorCount} Spectator{publicState.spectatorCount === 1 ? '' : 's'}
+            </span>
+          )}
+          {view.isSpectator ? (
+            <span
+              className="difficulty-badge"
+              style={{
+                borderColor: 'rgba(168, 85, 247, 0.4)',
+                color: '#C084FC',
+                background: 'rgba(168, 85, 247, 0.15)',
+              }}
+            >
+              👁️ Spectator Mode
+            </span>
+          ) : (
+            <span
+              className="difficulty-badge"
+              style={{
+                borderColor: 'rgba(56, 189, 248, 0.4)',
+                color: '#38BDF8',
+                background: 'rgba(56, 189, 248, 0.1)',
+              }}
+            >
+              Live Match
+            </span>
+          )}
         </div>
 
         <div className="game-controls-group">
@@ -651,7 +716,10 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
                 className={`opponent-pod ${isOppTurn ? 'active-turn' : ''}`}
               >
                 <div className="opponent-header">
-                  <span className="opponent-avatar">{opp.avatar}</span>
+                  <div style={{ position: 'relative', display: 'inline-flex' }}>
+                    <FloatingEmoteBadge emotes={floatingEmotes} targetId={opp.id} />
+                    <span className="opponent-avatar">{opp.avatar}</span>
+                  </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <span className="opponent-name">{opp.name}</span>
                     {opp.isHost && (
@@ -793,9 +861,12 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
           >
             {/* Left: Player Profile & Turn Indicator */}
             <div className="hand-player-info">
-              <span className="opponent-avatar">{me?.avatar || '👑'}</span>
+              <div style={{ position: 'relative', display: 'inline-flex' }}>
+                <FloatingEmoteBadge emotes={floatingEmotes} targetId={myPlayerId} />
+                <span className="opponent-avatar">{me?.avatar || '👑'}</span>
+              </div>
               <span className="player-name-tag">
-                {me?.name} ({view.myHand.length} cards)
+                {me?.name} ({view.isSpectator ? 'Spectating' : `${view.myHand.length} cards`})
               </span>
               {isMyTurn && <span className="turn-pill">Your Turn</span>}
               {isMyTurn && publicState.status === 'playing' && (
@@ -859,36 +930,65 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
               )}
             </div>
 
-            {/* Right: UNO Shout Button */}
-            <div className="hand-right-actions">
-              <button
-                className={`uno-shout-btn ${me?.unoDeclared ? 'declared' : ''} ${view.myHand.length <= 2 && !me?.unoDeclared ? 'pulse-ready' : ''}`}
-                onClick={handleDeclareUno}
-                disabled={me?.unoDeclared || view.myHand.length > 2}
-                title="Shout UNO when holding 2 or 1 cards"
-                data-testid="online-uno-btn"
-              >
-                {me?.unoDeclared ? (
-                  <>
-                    <CheckCircle2 size={14} /> UNO CALLED!
-                  </>
-                ) : (
-                  <>📢 SHOUT UNO!</>
-                )}
-              </button>
+            {/* Right: UNO Shout Button & Emote Reactions */}
+            <div className="hand-right-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <EmoteBar onSendEmote={handleSendEmote} />
+              {!view.isSpectator && (
+                <button
+                  className={`uno-shout-btn ${me?.unoDeclared ? 'declared' : ''} ${view.myHand.length <= 2 && !me?.unoDeclared ? 'pulse-ready' : ''}`}
+                  onClick={handleDeclareUno}
+                  disabled={me?.unoDeclared || view.myHand.length > 2}
+                  title="Shout UNO when holding 2 or 1 cards"
+                  data-testid="online-uno-btn"
+                >
+                  {me?.unoDeclared ? (
+                    <>
+                      <CheckCircle2 size={14} /> UNO CALLED!
+                    </>
+                  ) : (
+                    <>📢 SHOUT UNO!</>
+                  )}
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Cards Hand Container with Controlled Overlap & Gap Closing */}
-          <div
-            id="human-hand-container"
-            className="hand-cards-container"
-            style={
-              {
-                '--hand-card-overlap': `${calculatedOverlap}px`,
-              } as React.CSSProperties
-            }
-          >
+          {/* Cards Hand Container or Spectator Console */}
+          {view.isSpectator ? (
+            <div
+              className="spectator-active-panel"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '24px 16px',
+                background: 'rgba(15, 23, 42, 0.75)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '16px',
+                border: '1px solid rgba(168, 85, 247, 0.25)',
+                margin: '12px auto',
+                maxWidth: '680px',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: 700, color: '#C084FC' }}>
+                <Eye size={20} /> Spectator Mode Active
+              </div>
+              <p style={{ fontSize: '13px', color: '#94A3B8', marginTop: '6px', maxWidth: '440px' }}>
+                You are spectating match <strong>{roomCode}</strong> in real-time. Use the <strong>Emote</strong> button above to react and cheer!
+              </p>
+            </div>
+          ) : (
+            <div
+              id="human-hand-container"
+              className="hand-cards-container"
+              style={
+                {
+                  '--hand-card-overlap': `${calculatedOverlap}px`,
+                } as React.CSSProperties
+              }
+            >
             {view.myHand.map((card, idx) => {
               const isPlayable = isMyTurn && playableCardIds.has(card.id);
               const isSelected = selectedCardId === card.id;
@@ -931,6 +1031,7 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
               );
             })}
           </div>
+        )}
         </div>
       </div>
 

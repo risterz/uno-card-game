@@ -58,6 +58,11 @@
 - **🔄 7-0 Rule:** Playing any **7** lets you swap your hand with any chosen opponent. Playing any **0** rotates all players' hands in the active game direction.
 - **⚡ Jump-In Rule:** If you hold a card that matches the top discard in BOTH color and value, play it immediately out of turn to hijack the round.
 
+### 8. 💬 In-Game Emotes, Spectator Mode & Spooky BGM (New!)
+- **😂 Floating In-Game Emotes:** React in real-time with quick floating emotes (`😂`, `🔥`, `💀`, `GG`, `🎉`, `👍`, `😱`, `👋`) that glide above avatars with smooth spring animations. Works in both live multiplayer and local AI matches.
+- **👁️ Spectator Mode:** Join active multiplayer matches as a spectator at any time (even if the room is already full with 4 players or game is in progress). Watch turn timers, card counts, discards, and cheer with emotes.
+- **🎹 Theme-Specific BGM (Gothic Pipe Organ):** Selecting the **Halloween Collector's Deck** automatically switches the background soundtrack to an eerie Gothic pipe organ composition in D minor with cathedral reverb ([bgm-halloween.wav](public/sounds/bgm-halloween.wav)). Switching back to Classic Deck returns to relaxing casual lo-fi.
+
 ---
 
 ## 🏗️ Architecture & Technology Stack

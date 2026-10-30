@@ -10,6 +10,7 @@ import {
   Crown,
   AlertCircle,
   Sparkles,
+  Eye,
 } from 'lucide-react';
 import { multiplayerService } from '../../services/multiplayer-socket';
 import { PlayerPrivateView } from '../../types/multiplayer';
@@ -32,6 +33,7 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({
   });
   const [roomCodeInput, setRoomCodeInput] = useState(initialRoomCode);
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
+  const [joinAsSpectator, setJoinAsSpectator] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -67,8 +69,8 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({
     }
   };
 
-  const handleJoinRoom = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleJoinRoom = async (e?: React.FormEvent, forceSpectator = false) => {
+    if (e) e.preventDefault();
     if (!playerName.trim()) {
       setError('Please enter your name.');
       return;
@@ -81,11 +83,14 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({
     setLoading(true);
     localStorage.setItem('uno_player_name', playerName.trim());
 
+    const isSpectating = forceSpectator || joinAsSpectator;
+
     try {
       await multiplayerService.joinRoom({
         roomCode: roomCodeInput.trim().toUpperCase(),
         playerName: playerName.trim(),
-        avatar: selectedAvatar,
+        avatar: isSpectating ? '👁️' : selectedAvatar,
+        isSpectator: isSpectating,
       });
     } catch (err: any) {
       setError(err.message || 'Failed to join room.');
@@ -293,9 +298,32 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({
         </div>
 
         {error && (
-          <div className="lobby-error">
-            <AlertCircle size={16} />
-            <span>{error}</span>
+          <div className="lobby-error" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertCircle size={16} />
+              <span>{error}</span>
+            </div>
+            {(error.toLowerCase().includes('in progress') || error.toLowerCase().includes('full')) && (
+              <button
+                type="button"
+                className="lobby-btn"
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  background: 'rgba(168, 85, 247, 0.2)',
+                  border: '1px solid #C084FC',
+                  color: '#E9D5FF',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  borderRadius: '8px',
+                }}
+                onClick={() => handleJoinRoom(undefined, true)}
+              >
+                <Eye size={14} /> Join as Spectator Instead
+              </button>
+            )}
           </div>
         )}
 
@@ -420,6 +448,32 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({
               </div>
             </div>
 
+            <div style={{ margin: '8px 0 14px 0' }}>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '13px',
+                  color: '#C084FC',
+                  cursor: 'pointer',
+                  padding: '8px 12px',
+                  background: joinAsSpectator ? 'rgba(168, 85, 247, 0.18)' : 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid rgba(168, 85, 247, 0.3)',
+                  borderRadius: '8px',
+                  userSelect: 'none',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={joinAsSpectator}
+                  onChange={e => setJoinAsSpectator(e.target.checked)}
+                />
+                <Eye size={15} />
+                <span>Join as Spectator (Watch match live)</span>
+              </label>
+            </div>
+
             <button
               type="submit"
               className="lobby-btn primary"
@@ -428,6 +482,10 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({
             >
               {loading ? (
                 'Joining Room...'
+              ) : joinAsSpectator ? (
+                <>
+                  <Eye size={16} /> Spectate Game Room
+                </>
               ) : (
                 <>
                   <Users size={16} /> Join Game Room

@@ -39,6 +39,7 @@ describe('Gameplay & House Rules Suite', () => {
 
       state.discardPile = [mockCard('red', '5', 'base-r')];
       state.activeColor = 'red';
+      state.direction = 1;
       state.currentPlayerIndex = 0;
       state.players[0].hand = [draw2Red, mockCard('green', '1', 'dummy-1')];
       state.players[1].hand = [draw2Blue, mockCard('green', '2', 'dummy-2')];
@@ -121,6 +122,7 @@ describe('Gameplay & House Rules Suite', () => {
       // Top discard is Blue 4
       state.discardPile = [mockCard('blue', '4', 'top-b4')];
       state.activeColor = 'blue';
+      state.direction = 1;
       state.currentPlayerIndex = 0; // It is currently Player 0's turn
 
       // Player 2 holds an identical Blue 4

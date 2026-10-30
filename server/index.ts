@@ -1,6 +1,6 @@
 import http from 'http';
 import { Server, Socket } from 'socket.io';
-import { RoomManager, GameRoom } from './room-manager';
+import { RoomManager, GameRoom, isValidEmote } from './room-manager';
 import {
   CreateRoomRequest,
   JoinRoomRequest,
@@ -8,6 +8,8 @@ import {
   PlayCardRequest,
   ChooseColorRequest,
   CatchUnoRequest,
+  EmotePayload,
+  SendEmoteRequest,
 } from '../src/types/multiplayer';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
@@ -139,6 +141,16 @@ function broadcastRoom(room: GameRoom) {
       }
     }
   }
+  for (const s of room.spectators || []) {
+    if (s.socketId) {
+      try {
+        const privateView = roomManager.getPrivateView(room, s.id);
+        io.to(s.socketId).emit('sync_state', privateView);
+      } catch (err) {
+        console.error(`Failed to broadcast to spectator ${s.id}:`, err);
+      }
+    }
+  }
 }
 
 // Automatically broadcast to all sockets when a player's round timer expires
@@ -188,7 +200,7 @@ io.on('connection', (socket: Socket) => {
   });
 
   /**
-   * 2. Join Room
+   * 2. Join Room (as Player or Spectator)
    */
   socket.on('join_room', (data: JoinRoomRequest, callback) => {
     try {
@@ -196,11 +208,12 @@ io.on('connection', (socket: Socket) => {
         throw new Error('Missing room code or player name.');
       }
 
-      const { room, player, token } = roomManager.joinRoom(
+      const { room, player, token, isSpectator } = roomManager.joinRoom(
         data.roomCode,
         data.playerName,
         data.avatar,
-        socket.id
+        socket.id,
+        data.isSpectator
       );
 
       socket.join(room.code);
@@ -212,6 +225,7 @@ io.on('connection', (socket: Socket) => {
           roomCode: room.code,
           playerId: player.id,
           sessionToken: token,
+          isSpectator: !!isSpectator,
         });
       }
     } catch (err: any) {
@@ -230,7 +244,7 @@ io.on('connection', (socket: Socket) => {
         throw new Error('Missing roomCode or sessionToken.');
       }
 
-      const { room, player } = roomManager.reconnect(
+      const { room, player, isSpectator } = roomManager.reconnect(
         data.roomCode,
         data.sessionToken,
         socket.id
@@ -244,6 +258,7 @@ io.on('connection', (socket: Socket) => {
           success: true,
           roomCode: room.code,
           playerId: player.id,
+          isSpectator: !!isSpectator,
         });
       }
     } catch (err: any) {
@@ -445,14 +460,24 @@ io.on('connection', (socket: Socket) => {
   /**
    * 13. Leave Room
    */
-  socket.on('leave_room', (_data: { roomCode?: string }, callback) => {
+  socket.on('leave_room', (data: { roomCode?: string }, callback) => {
     try {
+      const code = data?.roomCode?.toUpperCase();
+      let targetRoom: GameRoom | undefined = code ? roomManager.getRoom(code) : undefined;
+
       const sp = roomManager.getPlayerBySocket(socket.id);
       if (sp) {
         socket.leave(sp.room.code);
         const { roomDestroyed } = roomManager.leaveRoom(sp.room.code, sp.player.id);
         if (!roomDestroyed) {
           broadcastRoom(sp.room);
+        }
+      } else if (targetRoom && targetRoom.spectators) {
+        const spec = targetRoom.spectators.find(s => s.socketId === socket.id);
+        if (spec) {
+          socket.leave(targetRoom.code);
+          roomManager.leaveRoom(targetRoom.code, spec.id);
+          broadcastRoom(targetRoom);
         }
       }
       if (typeof callback === 'function') callback({ success: true });
@@ -462,7 +487,47 @@ io.on('connection', (socket: Socket) => {
   });
 
   /**
-   * 14. Socket Disconnect
+   * 14. Send In-Game Emote Reaction
+   */
+  socket.on('send_emote', (data: SendEmoteRequest & { roomCode: string }, callback) => {
+    try {
+      if (!data || !data.roomCode || !data.emote || !isValidEmote(data.emote)) {
+        throw new Error('Invalid emote reaction.');
+      }
+
+      const room = roomManager.getRoom(data.roomCode);
+      if (!room) throw new Error('Room not found.');
+
+      // Check if player or spectator
+      const player = room.players.find(p => p.socketId === socket.id);
+      const spectator = (room.spectators || []).find(s => s.socketId === socket.id);
+
+      if (!player && !spectator) {
+        throw new Error('Sender not in this room.');
+      }
+
+      const senderId = player ? player.id : spectator!.id;
+      const senderName = player ? player.name : spectator!.name;
+      const isSpectator = !player;
+
+      const emotePayload: EmotePayload = {
+        id: `em-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        playerId: senderId,
+        playerName: senderName,
+        emote: data.emote.trim(),
+        timestamp: Date.now(),
+        isSpectator,
+      };
+
+      io.to(room.code).emit('player_emote', emotePayload);
+      if (typeof callback === 'function') callback({ success: true, emote: emotePayload });
+    } catch (err: any) {
+      if (typeof callback === 'function') callback({ success: false, error: err.message });
+    }
+  });
+
+  /**
+   * 15. Socket Disconnect
    */
   socket.on('disconnect', () => {
     const disconnected = roomManager.handleDisconnect(socket.id);

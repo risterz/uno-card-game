@@ -7,6 +7,7 @@ import {
   PlayCardRequest,
   ChooseColorRequest,
   CatchUnoRequest,
+  EmotePayload,
 } from '../types/multiplayer';
 
 export class MultiplayerSocketService {
@@ -202,11 +203,21 @@ export class MultiplayerSocketService {
     this.clearSession();
   }
 
+  public sendEmote(roomCode: string, emote: string): void {
+    this.socket?.emit('send_emote', { roomCode, emote });
+  }
+
   // --- Subscriptions ---
   public onSyncState(callback: (view: PlayerPrivateView) => void): () => void {
     const s = this.connect();
     s.on('sync_state', callback);
     return () => s.off('sync_state', callback);
+  }
+
+  public onPlayerEmote(callback: (payload: EmotePayload) => void): () => void {
+    const s = this.connect();
+    s.on('player_emote', callback);
+    return () => s.off('player_emote', callback);
   }
 
   public onActionNotification(callback: (notif: ActionNotificationPayload) => void): () => void {

@@ -44,6 +44,21 @@ export interface ServerPlayer {
   isReady: boolean;
 }
 
+export interface ServerSpectator {
+  id: string;
+  name: string;
+  avatar: string;
+  sessionToken: string;
+  socketId: string | null;
+  isConnected: boolean;
+}
+
+export const ALLOWED_EMOTES = ['😂', '🔥', '💀', 'GG', '🎉', '👍', '😱', '👋', '💩', '❤️', '👏', '👀'];
+
+export function isValidEmote(emote: string): boolean {
+  return typeof emote === 'string' && ALLOWED_EMOTES.includes(emote.trim());
+}
+
 export interface GameRoom {
   code: string;
   hostId: string;
@@ -51,6 +66,7 @@ export interface GameRoom {
   createdAt: number;
   lastActivity: number;
   players: ServerPlayer[];
+  spectators: ServerSpectator[];
   gameState: GameState | null;
   turnExpiresAt: number | null;
   turnTimer: NodeJS.Timeout | null;
@@ -176,6 +192,7 @@ export class RoomManager {
       createdAt: Date.now(),
       lastActivity: Date.now(),
       players: [hostPlayer],
+      spectators: [],
       gameState: null,
       turnExpiresAt: null,
       turnTimer: null,
@@ -188,23 +205,49 @@ export class RoomManager {
   }
 
   /**
-   * Join an existing room by code.
+   * Join an existing room by code (as player or spectator).
    */
   public joinRoom(
     roomCode: string,
     playerName: string,
     avatar?: string,
-    socketId?: string
+    socketId?: string,
+    isSpectator?: boolean
   ): {
     room: GameRoom;
-    player: ServerPlayer;
+    player: ServerPlayer | ServerSpectator;
     token: string;
+    isSpectator?: boolean;
   } {
     const code = roomCode.toUpperCase().trim();
     const room = this.rooms.get(code);
 
     if (!room) {
       throw new Error('Room not found. Check the room code.');
+    }
+
+    if (!room.spectators) {
+      room.spectators = [];
+    }
+
+    // Spectators can join at ANY stage without player limits
+    if (isSpectator) {
+      const spectatorId = `spec-${crypto.randomBytes(4).toString('hex')}`;
+      const token = generateSessionToken();
+      const spectator: ServerSpectator = {
+        id: spectatorId,
+        name: playerName.trim().slice(0, 20) || `Spectator ${room.spectators.length + 1}`,
+        avatar: avatar || '👁️',
+        sessionToken: token,
+        socketId: socketId || null,
+        isConnected: true,
+      };
+
+      room.spectators.push(spectator);
+      this.tokenToRoom.set(token, { roomCode: code, playerId: spectatorId });
+      room.lastActivity = Date.now();
+
+      return { room, player: spectator, token, isSpectator: true };
     }
 
     if (room.status !== 'lobby') {
@@ -238,7 +281,7 @@ export class RoomManager {
   }
 
   /**
-   * Reconnect existing player using session token.
+   * Reconnect existing player or spectator using session token.
    */
   public reconnect(
     roomCode: string,
@@ -246,7 +289,8 @@ export class RoomManager {
     socketId: string
   ): {
     room: GameRoom;
-    player: ServerPlayer;
+    player: ServerPlayer | ServerSpectator;
+    isSpectator?: boolean;
   } {
     const code = roomCode.toUpperCase().trim();
     const room = this.rooms.get(code);
@@ -255,23 +299,31 @@ export class RoomManager {
     }
 
     const player = room.players.find(p => p.sessionToken === sessionToken);
-    if (!player) {
-      throw new Error('Invalid session token for this room.');
+    if (player) {
+      player.socketId = socketId;
+      player.isConnected = true;
+      room.lastActivity = Date.now();
+      return { room, player, isSpectator: false };
     }
 
-    player.socketId = socketId;
-    player.isConnected = true;
-    room.lastActivity = Date.now();
+    const spectator = (room.spectators || []).find(s => s.sessionToken === sessionToken);
+    if (spectator) {
+      spectator.socketId = socketId;
+      spectator.isConnected = true;
+      room.lastActivity = Date.now();
+      return { room, player: spectator, isSpectator: true };
+    }
 
-    return { room, player };
+    throw new Error('Invalid session token for this room.');
   }
 
   /**
-   * Mark player disconnected.
+   * Mark player or spectator disconnected.
    */
   public handleDisconnect(socketId: string): {
     room: GameRoom;
-    player: ServerPlayer;
+    player: ServerPlayer | ServerSpectator;
+    isSpectator?: boolean;
   } | null {
     for (const room of this.rooms.values()) {
       const player = room.players.find(p => p.socketId === socketId);
@@ -279,7 +331,14 @@ export class RoomManager {
         player.isConnected = false;
         player.socketId = null;
         room.lastActivity = Date.now();
-        return { room, player };
+        return { room, player, isSpectator: false };
+      }
+      const spectator = (room.spectators || []).find(s => s.socketId === socketId);
+      if (spectator) {
+        spectator.isConnected = false;
+        spectator.socketId = null;
+        room.lastActivity = Date.now();
+        return { room, player: spectator, isSpectator: true };
       }
     }
     return null;
@@ -566,6 +625,12 @@ export class RoomManager {
     const room = this.getRoom(roomCode);
     if (!room) return { roomDestroyed: true };
 
+    // Check if a spectator is leaving
+    if (room.spectators && room.spectators.some(s => s.id === playerId)) {
+      room.spectators = room.spectators.filter(s => s.id !== playerId);
+      return { roomDestroyed: false, newHostId: room.hostId };
+    }
+
     room.players = room.players.filter(p => p.id !== playerId);
     if (room.players.length === 0) {
       this.clearTurnTimer(room);
@@ -609,6 +674,7 @@ export class RoomManager {
 
     const gs = room.gameState;
     const topDiscard = gs && gs.discardPile.length > 0 ? gs.discardPile[gs.discardPile.length - 1] : null;
+    const activeSpectators = (room.spectators || []).filter(s => s.isConnected).length;
 
     return {
       roomCode: room.code,
@@ -630,13 +696,27 @@ export class RoomManager {
       turnTimeoutSeconds: ONLINE_TURN_TIMEOUT_SECONDS,
       turnExpiresAt: room.status === 'playing' ? room.turnExpiresAt : null,
       serverTime: Date.now(),
+      spectatorCount: activeSpectators,
     };
   }
 
   /**
-   * Build private view for a specific player (their cards ONLY).
+   * Build private view for a specific player or spectator (their cards ONLY).
    */
   public getPrivateView(room: GameRoom, playerId: string): PlayerPrivateView {
+    // Check if spectator
+    const spectator = (room.spectators || []).find(s => s.id === playerId);
+    if (spectator) {
+      return {
+        myPlayerId: spectator.id,
+        sessionToken: spectator.sessionToken,
+        myHand: [],
+        drawnCard: null,
+        publicState: this.getPublicState(room),
+        isSpectator: true,
+      };
+    }
+
     const sp = room.players.find(p => p.id === playerId);
     if (!sp) throw new Error('Player not in room.');
 
@@ -653,6 +733,7 @@ export class RoomManager {
       myHand,
       drawnCard,
       publicState: this.getPublicState(room),
+      isSpectator: false,
     };
   }
 }
