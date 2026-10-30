@@ -1,10 +1,11 @@
 import React from 'react';
 import { CardSize } from '../types/card';
-import { generateCardBackSvg } from '../utils/svg-card-generator';
+import { CardThemeId, getCardTheme, useCardTheme } from '../themes/cardThemes';
 import '../styles/cards.css';
 
 export interface CardBackProps {
   size?: CardSize;
+  theme?: CardThemeId;
   className?: string;
   onClick?: () => void;
   interactive?: boolean;
@@ -12,15 +13,21 @@ export interface CardBackProps {
 
 export const CardBack: React.FC<CardBackProps> = ({
   size = 'md',
+  theme,
   className = '',
   onClick,
   interactive = true,
 }) => {
-  const cardBackSvgHtml = React.useMemo(() => generateCardBackSvg(), []);
+  const { currentTheme: globalTheme } = useCardTheme();
+  const activeThemeId = theme || globalTheme;
+  const activeTheme = getCardTheme(activeThemeId);
+
+  const cardBackSvgHtml = React.useMemo(() => activeTheme.generateCardBackSvg(), [activeTheme]);
 
   return (
     <div
-      className={`card-wrapper card-size-${size} ${interactive ? '' : 'disabled'} ${className}`}
+      className={`card-wrapper card-size-${size} theme-${activeThemeId} ${interactive ? '' : 'disabled'} ${className}`}
+      data-theme={activeThemeId}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}

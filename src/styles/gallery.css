@@ -599,6 +599,19 @@ body {
   min-height: 60px;
 }
 
+.nav-center-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.nav-theme-container {
+  flex-shrink: 0;
+}
+
 .nav-brand {
   display: flex;
   align-items: center;
@@ -617,6 +630,16 @@ body {
   background: linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(2, 132, 199, 0.2) 100%);
   border: 1px solid rgba(56, 189, 248, 0.35);
   box-shadow: 0 0 14px rgba(56, 189, 248, 0.2);
+  overflow: hidden;
+  padding: 1px;
+}
+
+.brand-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 7px;
+  display: block;
 }
 
 .brand-icon {
@@ -750,6 +773,9 @@ body {
     padding: 8px 16px;
     gap: 12px;
   }
+  .nav-center-wrap {
+    gap: 8px;
+  }
   .brand-title-full {
     display: none;
   }
@@ -766,6 +792,12 @@ body {
     padding: 6px 11px;
     font-size: 12px;
     gap: 5px;
+  }
+}
+
+@media (max-width: 640px) {
+  .top-nav .nav-theme-container {
+    display: none;
   }
 }
 

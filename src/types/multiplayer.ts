@@ -31,6 +31,9 @@ export interface PublicGameState {
   lastActionMessage: string;
   logs: LogEntry[];
   turnCount: number;
+  turnTimeoutSeconds: number; // Duration of each player round in seconds (e.g. 20s)
+  turnExpiresAt: number | null; // Timestamp (ms) when active player's round expires
+  serverTime?: number; // Authoritative server timestamp (ms) for clock drift compensation
 }
 
 export interface PlayerPrivateView {

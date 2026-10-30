@@ -19,6 +19,7 @@ import {
 } from '../src/types/multiplayer';
 
 const CODE_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+export const ONLINE_TURN_TIMEOUT_SECONDS = 20;
 
 export function generateRoomCode(): string {
   let code = '';
@@ -51,11 +52,94 @@ export interface GameRoom {
   lastActivity: number;
   players: ServerPlayer[];
   gameState: GameState | null;
+  turnExpiresAt: number | null;
+  turnTimer: NodeJS.Timeout | null;
 }
 
 export class RoomManager {
   private rooms: Map<string, GameRoom> = new Map();
   private tokenToRoom: Map<string, { roomCode: string; playerId: string }> = new Map();
+  private onTurnTimeoutCallback: ((room: GameRoom) => void) | null = null;
+
+  public setOnTurnTimeoutCallback(cb: (room: GameRoom) => void): void {
+    this.onTurnTimeoutCallback = cb;
+  }
+
+  public resetTurnTimer(room: GameRoom): void {
+    this.clearTurnTimer(room);
+    if (room.status !== 'playing' || !room.gameState || room.gameState.status === 'game_over') {
+      room.turnExpiresAt = null;
+      return;
+    }
+
+    room.turnExpiresAt = Date.now() + ONLINE_TURN_TIMEOUT_SECONDS * 1000;
+    room.turnTimer = setTimeout(() => {
+      this.handleTurnTimeout(room.code);
+    }, ONLINE_TURN_TIMEOUT_SECONDS * 1000);
+  }
+
+  public clearTurnTimer(room: GameRoom): void {
+    if (room.turnTimer) {
+      clearTimeout(room.turnTimer);
+      room.turnTimer = null;
+    }
+    room.turnExpiresAt = null;
+  }
+
+  public handleTurnTimeout(roomCode: string): void {
+    const room = this.getRoom(roomCode);
+    if (!room || !room.gameState || room.status !== 'playing') {
+      return;
+    }
+
+    const gs = room.gameState;
+    const activePlayer = gs.players[gs.currentPlayerIndex];
+    if (!activePlayer) return;
+
+    if (gs.status === 'awaiting_color_choice') {
+      const counts: Record<CardColor, number> = { red: 0, blue: 0, green: 0, yellow: 0, wild: 0 };
+      for (const c of activePlayer.hand) {
+        if (c.color !== 'wild') counts[c.color]++;
+      }
+      const colors: CardColor[] = ['red', 'blue', 'green', 'yellow'];
+      let bestColor: CardColor = 'red';
+      let max = -1;
+      for (const col of colors) {
+        if (counts[col] > max) {
+          max = counts[col];
+          bestColor = col;
+        }
+      }
+      try {
+        this.chooseColor(roomCode, activePlayer.id, bestColor);
+      } catch {
+        // Fallback
+      }
+    } else if (gs.status === 'drawn_card_decision') {
+      try {
+        this.passTurn(roomCode, activePlayer.id);
+      } catch {
+        // Fallback
+      }
+    } else if (gs.status === 'playing') {
+      try {
+        this.drawCard(roomCode, activePlayer.id);
+        if (room.gameState.status === 'drawn_card_decision') {
+          this.passTurn(roomCode, activePlayer.id);
+        }
+      } catch {
+        // Fallback
+      }
+    }
+
+    if (room.gameState) {
+      room.gameState.lastActionMessage = `⏰ ${activePlayer.name}'s round timed out!`;
+    }
+
+    if (this.onTurnTimeoutCallback) {
+      this.onTurnTimeoutCallback(room);
+    }
+  }
 
   /**
    * Create a new room with host player.
@@ -93,6 +177,8 @@ export class RoomManager {
       lastActivity: Date.now(),
       players: [hostPlayer],
       gameState: null,
+      turnExpiresAt: null,
+      turnTimer: null,
     };
 
     this.rooms.set(code, room);
@@ -258,6 +344,7 @@ export class RoomManager {
     room.gameState = initialGameState;
     room.status = 'playing';
     room.lastActivity = Date.now();
+    this.resetTurnTimer(room);
 
     return room;
   }
@@ -321,6 +408,7 @@ export class RoomManager {
 
     if (room.gameState.status === 'game_over' && room.gameState.winner) {
       room.status = 'game_over';
+      this.clearTurnTimer(room);
       const w = room.gameState.winner;
       return {
         notification,
@@ -328,6 +416,7 @@ export class RoomManager {
       };
     }
 
+    this.resetTurnTimer(room);
     return { notification };
   }
 
@@ -379,6 +468,7 @@ export class RoomManager {
 
     room.gameState = drawCard(gs, playerId);
     room.lastActivity = Date.now();
+    this.resetTurnTimer(room);
   }
 
   /**
@@ -400,6 +490,7 @@ export class RoomManager {
 
     room.gameState = passTurn(gs, playerId);
     room.lastActivity = Date.now();
+    this.resetTurnTimer(room);
   }
 
   /**
@@ -477,6 +568,7 @@ export class RoomManager {
 
     room.players = room.players.filter(p => p.id !== playerId);
     if (room.players.length === 0) {
+      this.clearTurnTimer(room);
       this.rooms.delete(room.code);
       return { roomDestroyed: true };
     }
@@ -489,6 +581,7 @@ export class RoomManager {
 
     // If game was playing and now fewer than 2 players, set back to lobby
     if (room.status === 'playing' && room.players.length < 2) {
+      this.clearTurnTimer(room);
       room.status = 'lobby';
       room.gameState = null;
     }
@@ -534,6 +627,9 @@ export class RoomManager {
       lastActionMessage: gs ? gs.lastActionMessage : 'Waiting in lobby...',
       logs: gs ? gs.logs : [],
       turnCount: gs ? gs.turnCount : 0,
+      turnTimeoutSeconds: ONLINE_TURN_TIMEOUT_SECONDS,
+      turnExpiresAt: room.status === 'playing' ? room.turnExpiresAt : null,
+      serverTime: Date.now(),
     };
   }
 

@@ -27,6 +27,7 @@ import { CardFlightLayer, FlightItem } from './CardFlightLayer';
 import { ActionEffects } from './ActionEffects';
 import { useNotificationManager } from '../../utils/useNotificationManager';
 import { VictoryCelebration } from './VictoryCelebration';
+import { ThemeSelector } from '../ThemeSelector';
 import {
   RotateCw,
   Settings,
@@ -932,6 +933,9 @@ export const GameBoard: React.FC = () => {
             <List size={14} /> Log ({gameState.logs.length})
           </button>
 
+          {/* Skin Theme Selector */}
+          <ThemeSelector variant="compact" />
+
           {/* Match Setup */}
           <button
             className="game-btn primary"
@@ -1504,6 +1508,11 @@ export const GameBoard: React.FC = () => {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* Card Theme Skin Selection */}
+                <div style={{ width: '100%', marginTop: '4px' }}>
+                  <ThemeSelector variant="full" />
                 </div>
 
                 <div

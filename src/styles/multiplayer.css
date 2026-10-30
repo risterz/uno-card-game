@@ -373,3 +373,223 @@
   70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
   100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
+
+/* Round / Turn Countdown Timer Styles (Online Mode Only) */
+.round-timer-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #38bdf8;
+  letter-spacing: 0.3px;
+  transition: all 0.25s ease;
+}
+
+.round-timer-pill.urgent {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+  animation: timerPulse 0.8s ease-in-out infinite alternate;
+}
+
+.opponent-timer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.opponent-timer-badge.urgent {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+  animation: timerPulse 0.8s ease-in-out infinite alternate;
+}
+
+.my-turn-timer-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.my-turn-timer-pill.urgent {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+  animation: timerPulse 0.8s ease-in-out infinite alternate;
+}
+
+.center-turn-indicator.urgent {
+  color: #ef4444 !important;
+  text-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
+.center-timer-text {
+  font-size: 11px;
+  font-weight: 800;
+  opacity: 0.9;
+}
+
+.center-timer-bar-track {
+  width: 120px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.center-timer-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8 0%, #0284c7 100%);
+  border-radius: 4px;
+  transition: width 0.25s linear;
+}
+
+.center-timer-bar-fill.urgent {
+  background: linear-gradient(90deg, #f59e0b 0%, #ef4444 100%);
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
+}
+
+.modal-timer-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding: 4px 12px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #38bdf8;
+}
+
+.modal-timer-pill.urgent {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+  animation: timerPulse 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes timerPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.05); }
+}
+
+.timer-icon-spin {
+  animation: timerIconWiggle 1s ease-in-out infinite;
+}
+
+@keyframes timerIconWiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-15deg); }
+  75% { transform: rotate(15deg); }
+}
+
+/* Mobile Responsive Breakpoints for Multiplayer */
+@media (max-width: 600px) {
+  .multiplayer-container {
+    padding: 12px 8px;
+    min-height: calc(100vh - 48px);
+    min-height: calc(100dvh - 44px);
+  }
+
+  .lobby-card {
+    padding: 18px 12px;
+    border-radius: 16px;
+    max-width: 100%;
+  }
+
+  .lobby-title {
+    font-size: 20px;
+  }
+
+  .avatar-picker {
+    gap: 6px;
+  }
+
+  .avatar-option {
+    width: 38px;
+    height: 38px;
+    font-size: 20px;
+    border-radius: 10px;
+  }
+
+  .room-code-value {
+    font-size: 24px;
+    letter-spacing: 3px;
+  }
+
+  .game-status-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    width: 100%;
+  }
+
+  .room-action-pill {
+    padding: 2px 8px;
+    font-size: 10px;
+    border-radius: 14px;
+  }
+
+  .turn-counter-badge {
+    padding: 2px 6px;
+    font-size: 10px;
+  }
+
+  .round-timer-pill {
+    padding: 2px 7px;
+    font-size: 10px;
+  }
+
+  .opponent-timer-badge {
+    padding: 1px 5px;
+    font-size: 9px;
+  }
+
+  .center-timer-bar-track {
+    width: 80px;
+    height: 4px;
+  }
+
+  .hand-player-info {
+    gap: 6px;
+  }
+
+  .my-turn-timer-pill {
+    padding: 1px 7px;
+    font-size: 10px;
+  }
+
+  .modal-timer-pill {
+    padding: 3px 10px;
+    font-size: 11px;
+    margin-bottom: 12px;
+  }
+}

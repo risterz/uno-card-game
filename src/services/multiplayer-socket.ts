@@ -15,8 +15,21 @@ export class MultiplayerSocketService {
 
   constructor() {
     const envUrl = import.meta.env.VITE_SERVER_URL;
-    if (envUrl) {
-      this.serverUrl = envUrl;
+
+    if (envUrl && envUrl.trim() !== '') {
+      let clean = envUrl.trim().replace(/\/+$/, '');
+      // Ensure automatic HTTPS/WSS upgrade when frontend is served over HTTPS
+      if (typeof window !== 'undefined' && window.location.protocol === 'https:' && clean.startsWith('http://')) {
+        clean = clean.replace(/^http:\/\//, 'https://');
+      }
+      this.serverUrl = clean;
+    } else if (import.meta.env.PROD) {
+      // In production without VITE_SERVER_URL, do NOT fallback to localhost
+      // Default to same-origin (if deployed behind reverse proxy)
+      this.serverUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      if (!this.serverUrl) {
+        console.warn('⚠️ VITE_SERVER_URL is not set in production. Multiplayer backend connection may fail.');
+      }
     } else if (typeof window !== 'undefined') {
       const hostname = window.location.hostname || 'localhost';
       this.serverUrl = `http://${hostname}:4000`;
@@ -31,8 +44,12 @@ export class MultiplayerSocketService {
     }
 
     if (!this.socket) {
+      const isSecure = this.serverUrl.startsWith('https://') ||
+        (typeof window !== 'undefined' && window.location.protocol === 'https:');
+
       this.socket = io(this.serverUrl, {
         transports: ['websocket', 'polling'],
+        secure: isSecure,
         reconnection: true,
         reconnectionAttempts: 10,
         reconnectionDelay: 1000,

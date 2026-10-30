@@ -3,12 +3,14 @@ import { motion, AnimatePresence } from 'motion/react';
 import CardGallery from './components/CardGallery';
 import GameBoard from './components/game/GameBoard';
 import { MultiplayerView } from './components/multiplayer/MultiplayerView';
-import { Layers, ShieldCheck, Palette, BookOpen, Gamepad2, Users } from 'lucide-react';
+import { Layers, ShieldCheck, Palette, BookOpen, Gamepad2, Users, Skull } from 'lucide-react';
 import { tabContentVariants } from './motion/motion-config';
+import { CardThemeProvider } from './themes/cardThemes';
+import { ThemeSelector } from './components/ThemeSelector';
 import './styles/cards.css';
 import './styles/gallery.css';
 
-export const App: React.FC = () => {
+export const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'game' | 'online' | 'gallery' | 'specs' | 'rules'>('game');
 
   // Auto-switch to Online tab if shareable invite link clicked
@@ -27,7 +29,11 @@ export const App: React.FC = () => {
       <nav className="top-nav">
         <div className="nav-brand">
           <div className="brand-logo-badge">
-            <Gamepad2 className="brand-icon" size={18} />
+            <img
+              src="/nano-banana-icon.jpg"
+              alt="Nano Banana Logo"
+              className="brand-logo-img"
+            />
           </div>
           <span className="brand-text">
             <span className="brand-title-full">UNO Game & Design System</span>
@@ -38,60 +44,68 @@ export const App: React.FC = () => {
             Fully Playable
           </span>
         </div>
-        <div className="nav-tabs-wrapper">
-          <div className="nav-tabs" role="tablist">
-            <button
-              className={`nav-tab ${activeTab === 'game' ? 'active' : ''}`}
-              onClick={() => setActiveTab('game')}
-              role="tab"
-              aria-selected={activeTab === 'game'}
-              data-testid="nav-tab-local"
-            >
-              <Gamepad2 size={15} className="nav-tab-icon" />
-              <span className="tab-label-full">Play Local</span>
-              <span className="tab-label-short">Local</span>
-            </button>
-            <button
-              className={`nav-tab ${activeTab === 'online' ? 'active' : ''}`}
-              onClick={() => setActiveTab('online')}
-              role="tab"
-              aria-selected={activeTab === 'online'}
-              data-testid="nav-tab-online"
-            >
-              <Users size={15} className="nav-tab-icon" />
-              <span className="tab-label-full">Online Play</span>
-              <span className="tab-label-short">Online</span>
-            </button>
-            <button
-              className={`nav-tab ${activeTab === 'gallery' ? 'active' : ''}`}
-              onClick={() => setActiveTab('gallery')}
-              role="tab"
-              aria-selected={activeTab === 'gallery'}
-            >
-              <Layers size={15} className="nav-tab-icon" />
-              <span className="tab-label-full">108-Card Deck</span>
-              <span className="tab-label-short">Cards</span>
-            </button>
-            <button
-              className={`nav-tab ${activeTab === 'specs' ? 'active' : ''}`}
-              onClick={() => setActiveTab('specs')}
-              role="tab"
-              aria-selected={activeTab === 'specs'}
-            >
-              <Palette size={15} className="nav-tab-icon" />
-              <span className="tab-label-full">Design Specs</span>
-              <span className="tab-label-short">Specs</span>
-            </button>
-            <button
-              className={`nav-tab ${activeTab === 'rules' ? 'active' : ''}`}
-              onClick={() => setActiveTab('rules')}
-              role="tab"
-              aria-selected={activeTab === 'rules'}
-            >
-              <BookOpen size={15} className="nav-tab-icon" />
-              <span className="tab-label-full">Rules & Engine</span>
-              <span className="tab-label-short">Rules</span>
-            </button>
+
+        <div className="nav-center-wrap">
+          <div className="nav-tabs-wrapper">
+            <div className="nav-tabs" role="tablist">
+              <button
+                className={`nav-tab ${activeTab === 'game' ? 'active' : ''}`}
+                onClick={() => setActiveTab('game')}
+                role="tab"
+                aria-selected={activeTab === 'game'}
+                data-testid="nav-tab-local"
+              >
+                <Gamepad2 size={15} className="nav-tab-icon" />
+                <span className="tab-label-full">Play Local</span>
+                <span className="tab-label-short">Local</span>
+              </button>
+              <button
+                className={`nav-tab ${activeTab === 'online' ? 'active' : ''}`}
+                onClick={() => setActiveTab('online')}
+                role="tab"
+                aria-selected={activeTab === 'online'}
+                data-testid="nav-tab-online"
+              >
+                <Users size={15} className="nav-tab-icon" />
+                <span className="tab-label-full">Online Play</span>
+                <span className="tab-label-short">Online</span>
+              </button>
+              <button
+                className={`nav-tab ${activeTab === 'gallery' ? 'active' : ''}`}
+                onClick={() => setActiveTab('gallery')}
+                role="tab"
+                aria-selected={activeTab === 'gallery'}
+              >
+                <Layers size={15} className="nav-tab-icon" />
+                <span className="tab-label-full">108-Card Deck</span>
+                <span className="tab-label-short">Cards</span>
+              </button>
+              <button
+                className={`nav-tab ${activeTab === 'specs' ? 'active' : ''}`}
+                onClick={() => setActiveTab('specs')}
+                role="tab"
+                aria-selected={activeTab === 'specs'}
+              >
+                <Palette size={15} className="nav-tab-icon" />
+                <span className="tab-label-full">Design Specs</span>
+                <span className="tab-label-short">Specs</span>
+              </button>
+              <button
+                className={`nav-tab ${activeTab === 'rules' ? 'active' : ''}`}
+                onClick={() => setActiveTab('rules')}
+                role="tab"
+                aria-selected={activeTab === 'rules'}
+              >
+                <BookOpen size={15} className="nav-tab-icon" />
+                <span className="tab-label-full">Rules & Engine</span>
+                <span className="tab-label-short">Rules</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Global Theme Switcher */}
+          <div className="nav-theme-container">
+            <ThemeSelector variant="compact" />
           </div>
         </div>
       </nav>
@@ -164,37 +178,39 @@ export const App: React.FC = () => {
                     <li><strong>Aspect Ratio:</strong> 5:7 (0.7142)</li>
                     <li><strong>Corner Radius:</strong> 18px outer, 14px inner</li>
                     <li><strong>SVG viewBox:</strong> <code>0 0 240 336</code></li>
-                    <li><strong>Physical Border:</strong> 8px crisp white outer margin</li>
+                    <li><strong>Physical Border:</strong> 8px crisp outer margin with rounded corners</li>
                   </ul>
                 </div>
 
-                {/* Color System Card */}
+                {/* Classic Color System Card */}
                 <div className="spec-card">
-                  <h3>Color Palette Tokens</h3>
+                  <h3>Classic Tournament Tokens</h3>
                   <ul>
                     <li><span className="spec-swatch" style={{ background: '#E61938' }} /><strong>Red:</strong> <code>#E61938</code> (Gradients: #FF3358 to #BA0D28)</li>
                     <li><span className="spec-swatch" style={{ background: '#0066E5' }} /><strong>Blue:</strong> <code>#0066E5</code> (Gradients: #1E88FF to #0047B8)</li>
                     <li><span className="spec-swatch" style={{ background: '#00A852' }} /><strong>Green:</strong> <code>#00A852</code> (Gradients: #10C865 to #00853E)</li>
                     <li><span className="spec-swatch" style={{ background: '#F5A600' }} /><strong>Yellow:</strong> <code>#F5A600</code> (Gradients: #FFBF1A to #D98200)</li>
-                    <li><span className="spec-swatch" style={{ background: '#1E1B2E' }} /><strong>Wild / Dark:</strong> <code>#1E1B2E</code> (Gradients: #2F2B48 to #13111F)</li>
+                    <li><span className="spec-swatch" style={{ background: '#1E1B2E' }} /><strong>Wild:</strong> <code>#1E1B2E</code> (Gradients: #2F2B48 to #13111F)</li>
                   </ul>
                 </div>
 
-                {/* Layout System Card */}
-                <div className="spec-card">
-                  <h3>Template Rules & Layout</h3>
+                {/* Halloween Theme System Card */}
+                <div className="spec-card" style={{ borderColor: 'rgba(245, 158, 11, 0.4)' }}>
+                  <h3 style={{ color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Skull size={18} /> Halloween Collector Deck System
+                  </h3>
                   <ul>
-                    <li><strong>Central Badge:</strong> Ellipse rotated at -24° (rx=84, ry=58 at 120, 168)</li>
-                    <li><strong>Top-Left Corner:</strong> Positioned at <code>(30, 36)</code>, scaled ~28px</li>
-                    <li><strong>Bottom-Right Corner:</strong> Positioned at <code>(210, 300)</code> with 180° rotation</li>
-                    <li><strong>Numeral Ambiguity Prevention:</strong> Numbers 6 and 9 feature standard underline bars (88px to 152px at y=222px)</li>
-                    <li><strong>Drop Shadows:</strong> Gaussian blur <code>feDropShadow</code> filters baked into vector code</li>
+                    <li><span className="spec-swatch" style={{ background: '#E11D48' }} /><strong>Vampire Crimson (Red):</strong> Castle Dracul, coffins, bats, blood roses</li>
+                    <li><span className="spec-swatch" style={{ background: '#38BDF8' }} /><strong>Midnight Haunt (Blue):</strong> Sunken spirits, will-o'-wisps, ghost ships</li>
+                    <li><span className="spec-swatch" style={{ background: '#10B981' }} /><strong>Witchcraft (Green):</strong> Treants, cauldrons, potion vials, hex altars</li>
+                    <li><span className="spec-swatch" style={{ background: '#F59E0B' }} /><strong>Pumpkin Gold (Yellow):</strong> Jack-o'-lanterns, lanterns, scarecrows</li>
+                    <li><span className="spec-swatch" style={{ background: '#A855F7' }} /><strong>Dark Magic (Wild):</strong> Haunted grimoires and 4 elemental flames</li>
                   </ul>
                 </div>
 
                 {/* Strict Inventory Breakdown */}
                 <div className="spec-card">
-                  <h3>Standard 108-Card Inventory</h3>
+                  <h3>Strict 108-Card Inventory</h3>
                   <ul>
                     <li><strong>76 Number Cards:</strong> 1x 0 card + 2x (1-9) per each of the 4 colors</li>
                     <li><strong>24 Colored Action Cards:</strong> 2x Skip + 2x Reverse + 2x Draw Two per color</li>
@@ -262,6 +278,14 @@ export const App: React.FC = () => {
         </AnimatePresence>
       </main>
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <CardThemeProvider>
+      <AppContent />
+    </CardThemeProvider>
   );
 };
 

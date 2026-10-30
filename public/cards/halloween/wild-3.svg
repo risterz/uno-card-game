@@ -1,0 +1,206 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 336" width="240" height="336" data-card-id="wild-3" data-card-key="wild" data-theme="halloween">
+  <defs>
+    <!-- Card Body Dark Midnight Gradient -->
+    <linearGradient id="card-grad-wild-3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#581C87" />
+      <stop offset="45%" stop-color="#0D0714" />
+      <stop offset="100%" stop-color="#070208" />
+    </linearGradient>
+
+    <!-- Blood Moon Gradient for Red -->
+    <radialGradient id="blood-moon-grad" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#FDA4AF" />
+      <stop offset="30%" stop-color="#E11D48" />
+      <stop offset="85%" stop-color="#881337" />
+      <stop offset="100%" stop-color="#4C0519" />
+    </radialGradient>
+
+    <!-- Ruby Gem Gradient -->
+    <linearGradient id="ruby-gem-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE4E6" />
+      <stop offset="35%" stop-color="#FF4D6D" />
+      <stop offset="80%" stop-color="#BA0D28" />
+      <stop offset="100%" stop-color="#4C0519" />
+    </linearGradient>
+
+    <!-- Ghost Cyan Gradient for Blue -->
+    <linearGradient id="ghost-cyan-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="40%" stop-color="#BAE6FD" />
+      <stop offset="80%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#0369A1" />
+    </linearGradient>
+
+    <linearGradient id="cyan-glow-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#0369A1" />
+    </linearGradient>
+
+    <!-- Potion Vapor Gradient for Green -->
+    <radialGradient id="potion-vapor-grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ECFDF5" />
+      <stop offset="35%" stop-color="#34D399" />
+      <stop offset="75%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#064E3B" />
+    </radialGradient>
+
+    <!-- Harvest Moon Gradient for Yellow -->
+    <radialGradient id="harvest-moon-grad" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#FFFBEB" />
+      <stop offset="30%" stop-color="#FEF08A" />
+      <stop offset="70%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#9A3412" />
+    </radialGradient>
+
+    <!-- Glow & Shadow Filters -->
+    <filter id="glow-soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="glow-strong" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="drop-shadow-main" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000000" flood-opacity="0.85" />
+    </filter>
+
+    <filter id="drop-shadow-subtle" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#000000" flood-opacity="0.75" />
+    </filter>
+
+    <!-- Clip path for card corner rounding -->
+    <clipPath id="hw-card-body-clip-wild-3">
+      <rect x="8" y="8" width="224" height="320" rx="14" ry="14" />
+    </clipPath>
+  </defs>
+
+  <!-- 1. Physical Card Base (Gothic Obsidian Rim with Gold Trim) -->
+  <rect x="1" y="1" width="238" height="334" rx="18" ry="18" fill="#0C0512" stroke="#F59E0B" stroke-width="2.2" />
+
+  <!-- 2. Inner Card Body with rich color fill -->
+  <g clip-path="url(#hw-card-body-clip-wild-3)">
+    <rect x="8" y="8" width="224" height="320" rx="14" ry="14" fill="url(#card-grad-wild-3)" />
+
+    <!-- Gothic Ornamental Inner Filigree Frame -->
+    <rect x="14" y="14" width="212" height="308" rx="10" ry="10" fill="none" stroke="#F59E0B" stroke-width="1.4" opacity="0.85" />
+    <rect x="17" y="17" width="206" height="302" rx="8" ry="8" fill="none" stroke="#A855F7" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.6" />
+
+    <!-- Corner Spiderwebs -->
+    <g transform="translate(16, 16)" opacity="0.35">
+      <path d="M 0 0 L 26 0 M 0 0 L 22 14 M 0 0 L 14 22 M 0 0 L 0 26" stroke="#FFFFFF" stroke-width="0.7" />
+      <path d="M 8 0 Q 6 5 0 8 M 16 0 Q 12 10 0 16 M 24 0 Q 18 16 0 24" fill="none" stroke="#FFFFFF" stroke-width="0.6" />
+    </g>
+    <g transform="translate(224, 16) scale(-1, 1)" opacity="0.35">
+      <path d="M 0 0 L 26 0 M 0 0 L 22 14 M 0 0 L 14 22 M 0 0 L 0 26" stroke="#FFFFFF" stroke-width="0.7" />
+      <path d="M 8 0 Q 6 5 0 8 M 16 0 Q 12 10 0 16 M 24 0 Q 18 16 0 24" fill="none" stroke="#FFFFFF" stroke-width="0.6" />
+    </g>
+    <g transform="translate(16, 320) scale(1, -1)" opacity="0.35">
+      <path d="M 0 0 L 26 0 M 0 0 L 22 14 M 0 0 L 14 22 M 0 0 L 0 26" stroke="#FFFFFF" stroke-width="0.7" />
+      <path d="M 8 0 Q 6 5 0 8 M 16 0 Q 12 10 0 16 M 24 0 Q 18 16 0 24" fill="none" stroke="#FFFFFF" stroke-width="0.6" />
+    </g>
+    <g transform="translate(224, 320) scale(-1, -1)" opacity="0.35">
+      <path d="M 0 0 L 26 0 M 0 0 L 22 14 M 0 0 L 14 22 M 0 0 L 0 26" stroke="#FFFFFF" stroke-width="0.7" />
+      <path d="M 8 0 Q 6 5 0 8 M 16 0 Q 12 10 0 16 M 24 0 Q 18 16 0 24" fill="none" stroke="#FFFFFF" stroke-width="0.6" />
+    </g>
+
+    <!-- 3. Central Gothic Arch/Vignette Backdrop -->
+    <g filter="url(#drop-shadow-main)">
+      <path d="M 45 240 L 45 130 C 45 65, 195 65, 195 130 L 195 240 Z" fill="#0C0412" stroke="#A855F7" stroke-width="2.5" opacity="0.8" />
+      <path d="M 49 238 L 49 132 C 49 72, 191 72, 191 132 L 191 238 Z" fill="none" stroke="#F59E0B" stroke-width="1.2" opacity="0.7" />
+    </g>
+
+    <!-- 4. Thematic Unique Artwork for This Specific Card -->
+    
+      <g id="art-wild">
+        <!-- Nether Astral Ring & Runic Circle -->
+        <circle cx="120" cy="165" r="54" fill="#0D0716" stroke="#A855F7" stroke-width="2.5" />
+        <circle cx="120" cy="165" r="48" fill="none" stroke="#F59E0B" stroke-width="1.2" stroke-dasharray="3,3" />
+
+        <!-- Floating Ancient Open Spellbook -->
+        <g transform="translate(120, 162)">
+          <!-- Grimoire Leather Cover -->
+          <path d="M -32 10 Q -16 5, 0 8 Q 16 5, 32 10 L 30 24 Q 15 18, 0 20 Q -15 18, -30 24 Z" fill="#2E104D" stroke="#F59E0B" stroke-width="1.8" />
+          <!-- Parchment Pages -->
+          <path d="M -30 7 Q -15 2, 0 5 Q 15 2, 30 7 L 28 20 Q 14 14, 0 16 Q -14 14, -28 20 Z" fill="#F3E8FF" />
+          <!-- Eye of the Abyss in Grimoire Center -->
+          <circle cx="0" cy="8" r="4.5" fill="#581C87" />
+          <polygon points="0,5 2,8 0,11 -2,8" fill="#FCD34D" />
+        </g>
+
+        <!-- The Four Elemental Halloween Flames -->
+        <!-- 1. Vampire Crimson Flame (Top-Left) -->
+        <g transform="translate(86, 130)" filter="url(#glow-strong)">
+          <path d="M 0 0 C -10 -6, -6 -18, 0 -24 C 6 -18, 10 -6, 0 0 Z" fill="#E11D48" />
+          <circle cx="0" cy="-6" r="3" fill="#FDA4AF" />
+        </g>
+
+        <!-- 2. Midnight Spectral Blue Flame (Top-Right) -->
+        <g transform="translate(154, 130)" filter="url(#glow-strong)">
+          <path d="M 0 0 C -10 -6, -6 -18, 0 -24 C 6 -18, 10 -6, 0 0 Z" fill="#38BDF8" />
+          <circle cx="0" cy="-6" r="3" fill="#BAE6FD" />
+        </g>
+
+        <!-- 3. Pumpkin Gold Flame (Bottom-Right) -->
+        <g transform="translate(154, 192)" filter="url(#glow-strong)">
+          <path d="M 0 0 C -10 -6, -6 -18, 0 -24 C 6 -18, 10 -6, 0 0 Z" fill="#F59E0B" />
+          <circle cx="0" cy="-6" r="3" fill="#FEF08A" />
+        </g>
+
+        <!-- 4. Witchcraft Emerald Flame (Bottom-Left) -->
+        <g transform="translate(86, 192)" filter="url(#glow-strong)">
+          <path d="M 0 0 C -10 -6, -6 -18, 0 -24 C 6 -18, 10 -6, 0 0 Z" fill="#10B981" />
+          <circle cx="0" cy="-6" r="3" fill="#A7F3D0" />
+        </g>
+
+        <!-- Prominent Gothic "WILD" Banner -->
+        <g transform="translate(120, 208)" filter="url(#glow-strong)">
+          <rect x="-42" y="-14" width="84" height="28" rx="14" fill="#150824" stroke="#F59E0B" stroke-width="2.5" />
+          <text x="0" y="1" text-anchor="middle" dominant-baseline="central"
+                font-family="'Impact', 'Arial Black', -apple-system, sans-serif"
+                font-size="16" font-weight="900" fill="#FFFFFF"
+                letter-spacing="3">WILD</text>
+        </g>
+      </g>
+    
+
+    <!-- 5. Dominant Central Numeral (for Number Cards) -->
+    
+
+    <!-- 6. Top-Left Corner Symbol -->
+    <g transform="translate(30, 36)" filter="url(#drop-shadow-subtle)">
+      
+      <g>
+        <circle cx="0" cy="0" r="11" fill="#150824" stroke="#F59E0B" stroke-width="1.5" />
+        <path d="M 0 0 L -9 0 A 9 9 0 0 1 0 -9 Z" fill="#E11D48" />
+        <path d="M 0 0 L 0 -9 A 9 9 0 0 1 9 0 Z" fill="#38BDF8" />
+        <path d="M 0 0 L 9 0 A 9 9 0 0 1 0 9 Z" fill="#F59E0B" />
+        <path d="M 0 0 L 0 9 A 9 9 0 0 1 -9 0 Z" fill="#10B981" />
+        <circle cx="0" cy="0" r="3" fill="#FFFFFF" />
+      </g>
+    
+    </g>
+
+    <!-- 7. Bottom-Right Corner Symbol (180deg rotated) -->
+    <g transform="translate(210, 300) rotate(180)" filter="url(#drop-shadow-subtle)">
+      
+      <g>
+        <circle cx="0" cy="0" r="11" fill="#150824" stroke="#F59E0B" stroke-width="1.5" />
+        <path d="M 0 0 L -9 0 A 9 9 0 0 1 0 -9 Z" fill="#E11D48" />
+        <path d="M 0 0 L 0 -9 A 9 9 0 0 1 9 0 Z" fill="#38BDF8" />
+        <path d="M 0 0 L 9 0 A 9 9 0 0 1 0 9 Z" fill="#F59E0B" />
+        <path d="M 0 0 L 0 9 A 9 9 0 0 1 -9 0 Z" fill="#10B981" />
+        <circle cx="0" cy="0" r="3" fill="#FFFFFF" />
+      </g>
+    
+    </g>
+  </g>
+</svg>

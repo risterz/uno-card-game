@@ -9,6 +9,7 @@ import { isCardPlayable } from '../../engine/rules';
 import { ActionEffects } from '../game/ActionEffects';
 import { VictoryCelebration } from '../game/VictoryCelebration';
 import { CardFlightLayer, FlightItem } from '../game/CardFlightLayer';
+import { ThemeSelector } from '../ThemeSelector';
 import { useAnimationSettings } from '../../utils/animation-settings';
 import { playSound, preloadSounds, SoundEffect } from '../../utils/audio';
 import {
@@ -28,10 +29,77 @@ import {
   ZapOff,
   Volume2,
   VolumeX,
+  Timer,
 } from 'lucide-react';
 import '../../styles/game.css';
 import '../../styles/animations.css';
 import '../../styles/multiplayer.css';
+
+/**
+ * Hook to manage round/turn countdown timer for online multiplayer.
+ * Guarantees smooth ticking and clock drift compensation, with a local fallback
+ * whenever a new turn starts so the timer NEVER freezes under any circumstances.
+ */
+function useTurnCountdown(
+  turnExpiresAt: number | null | undefined,
+  turnTimeoutSeconds: number = 20,
+  serverTime?: number | null,
+  turnKey?: string | number,
+  isPlaying: boolean = true
+) {
+  // Estimate clock skew offset: (serverTime - clientLocalTime)
+  const clockSkewRef = useRef<number>(0);
+  useEffect(() => {
+    if (typeof serverTime === 'number' && serverTime > 0) {
+      clockSkewRef.current = serverTime - Date.now();
+    }
+  }, [serverTime]);
+
+  // Local fallback expiration timestamp in case server turnExpiresAt is missing or null
+  const fallbackExpiresRef = useRef<number>(Date.now() + turnTimeoutSeconds * 1000);
+
+  // When turn changes, reset fallback expiration to a full round
+  useEffect(() => {
+    fallbackExpiresRef.current = Date.now() + turnTimeoutSeconds * 1000;
+  }, [turnKey, turnTimeoutSeconds]);
+
+  const [secondsLeft, setSecondsLeft] = useState<number>(turnTimeoutSeconds);
+  const [percent, setPercent] = useState<number>(100);
+
+  useEffect(() => {
+    if (!isPlaying) {
+      setSecondsLeft(turnTimeoutSeconds);
+      setPercent(100);
+      return;
+    }
+
+    const update = () => {
+      const now = Date.now();
+      const currentServerNow = now + clockSkewRef.current;
+
+      let effectiveExpiresAt: number;
+      if (typeof turnExpiresAt === 'number' && turnExpiresAt > 0) {
+        effectiveExpiresAt = turnExpiresAt;
+      } else {
+        effectiveExpiresAt = fallbackExpiresRef.current;
+      }
+
+      const msLeft = Math.max(0, effectiveExpiresAt - currentServerNow);
+      const secs = Math.ceil(msLeft / 1000);
+      const pct = Math.max(0, Math.min(100, (msLeft / (turnTimeoutSeconds * 1000)) * 100));
+
+      setSecondsLeft(secs);
+      setPercent(pct);
+    };
+
+    update();
+    const interval = setInterval(update, 100);
+    return () => clearInterval(interval);
+  }, [turnExpiresAt, turnTimeoutSeconds, turnKey, isPlaying]);
+
+  const isUrgent = secondsLeft <= 5 && secondsLeft > 0;
+  return { secondsLeft, percent, isUrgent };
+}
 
 interface MultiplayerGameBoardProps {
   view: PlayerPrivateView;
@@ -89,6 +157,18 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
   // Top discard and active color
   const topDiscard = publicState.topDiscard;
   const activeColor = publicState.activeColor;
+
+  // Unique turn key to track round changes
+  const turnKey = `${publicState.turnCount || 0}-${publicState.currentPlayerIndex}-${publicState.gameStatus}`;
+
+  // Round / Turn countdown timer for online multiplayer
+  const { secondsLeft, percent, isUrgent } = useTurnCountdown(
+    publicState.turnExpiresAt,
+    publicState.turnTimeoutSeconds || 20,
+    publicState.serverTime,
+    turnKey,
+    publicState.status === 'playing'
+  );
 
   const [testOverrideAwaitingChoice, setTestOverrideAwaitingChoice] = useState(false);
   const isAwaitingColorChoice = testOverrideAwaitingChoice || (publicState.gameStatus === 'awaiting_color_choice' && isMyTurn);
@@ -469,14 +549,7 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
 
       {/* 1. Game Top Status Bar (Matching Local Game Controls) */}
       <div className="game-top-bar">
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            minWidth: 0,
-          }}
-        >
+        <div className="game-status-row">
           <div className="game-status-pill">
             <Sparkles size={16} className="brand-icon" />
             <span>{publicState.lastActionMessage}</span>
@@ -491,6 +564,16 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
           <span className="turn-counter-badge">
             Turn {publicState.turnCount || 1}
           </span>
+          {publicState.status === 'playing' && (
+            <span
+              className={`round-timer-pill ${isUrgent ? 'urgent' : ''}`}
+              title={`Turn timer: ${secondsLeft}s remaining`}
+              data-testid="online-round-timer"
+            >
+              <Timer size={13} className={isUrgent ? 'timer-icon-spin' : ''} />
+              <span>{secondsLeft}s</span>
+            </span>
+          )}
           <span
             className="difficulty-badge"
             style={{
@@ -504,6 +587,9 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
         </div>
 
         <div className="game-controls-group">
+          {/* Theme Skin Switcher */}
+          <ThemeSelector variant="compact" />
+
           {/* Animation Intensity Cycle Control */}
           <button
             className="game-btn"
@@ -581,6 +667,16 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
                   <span className="opponent-cards-badge">
                     {opp.cardCount} cards
                   </span>
+                  {isOppTurn && publicState.status === 'playing' && (
+                    <span
+                      className={`opponent-timer-badge ${isUrgent ? 'urgent' : ''}`}
+                      title={`${opp.name} has ${secondsLeft}s left`}
+                      data-testid={`opponent-timer-${opp.id}`}
+                    >
+                      <Timer size={11} className={isUrgent ? 'timer-icon-spin' : ''} />
+                      <span>{secondsLeft}s</span>
+                    </span>
+                  )}
                 </div>
 
                 {/* Visual miniature cards fan matching local game table */}
@@ -647,10 +743,25 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
               </div>
               <span className="color-text-label">{publicState.activeColor}</span>
               <span
-                className={`center-turn-indicator ${isMyTurn ? 'human-turn' : ''}`}
+                className={`center-turn-indicator ${isMyTurn ? 'human-turn' : ''} ${isUrgent && publicState.status === 'playing' ? 'urgent' : ''}`}
               >
                 {isMyTurn ? '👉 Your Turn' : `⏳ ${currentPlayer?.name || 'Waiting'}'s Turn`}
+                {publicState.status === 'playing' && (
+                  <span className="center-timer-text"> ({secondsLeft}s)</span>
+                )}
               </span>
+              {publicState.status === 'playing' && (
+                <div
+                  className="center-timer-bar-track"
+                  title={`Round timer: ${secondsLeft}s remaining`}
+                  data-testid="center-timer-bar"
+                >
+                  <div
+                    className={`center-timer-bar-fill ${isUrgent ? 'urgent' : ''}`}
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Discard Pile with Landing Shockwave */}
@@ -687,6 +798,16 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
                 {me?.name} ({view.myHand.length} cards)
               </span>
               {isMyTurn && <span className="turn-pill">Your Turn</span>}
+              {isMyTurn && publicState.status === 'playing' && (
+                <span
+                  className={`my-turn-timer-pill ${isUrgent ? 'urgent' : ''}`}
+                  title={`Your turn time remaining: ${secondsLeft}s`}
+                  data-testid="my-turn-timer"
+                >
+                  <Timer size={12} className={isUrgent ? 'timer-icon-spin' : ''} />
+                  <span>{secondsLeft}s</span>
+                </span>
+              )}
             </div>
 
             {/* Center: Contextual Action Controls */}
@@ -832,6 +953,15 @@ export const MultiplayerGameBoard: React.FC<MultiplayerGameBoardProps> = ({
             >
               <h3 className="color-choice-title">Wild Card Played!</h3>
               <p className="color-choice-subtitle">Select the next active color for the game table:</p>
+              {publicState.status === 'playing' && (
+                <div
+                  className={`modal-timer-pill ${isUrgent ? 'urgent' : ''}`}
+                  data-testid="wild-modal-timer"
+                >
+                  <Timer size={13} className={isUrgent ? 'timer-icon-spin' : ''} />
+                  <span>Auto-selecting color in {secondsLeft}s</span>
+                </div>
+              )}
               <div className="color-buttons-grid">
                 {(['red', 'blue', 'green', 'yellow'] as CardColor[]).map(color => (
                   <motion.button

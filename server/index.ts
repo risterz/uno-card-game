@@ -11,16 +11,57 @@ import {
 } from '../src/types/multiplayer';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
-const CLIENT_URL = process.env.CLIENT_URL || '*';
+const HOST = process.env.HOST || '0.0.0.0';
+const IS_PROD = process.env.NODE_ENV === 'production';
+// Wildcard allowed in development only; production requires explicit origins
+const CLIENT_URL = process.env.CLIENT_URL || (IS_PROD ? '' : '*');
 
 const roomManager = new RoomManager();
 
-// Create HTTP server with simple /health endpoint
+/**
+ * Check if incoming request origin is permitted by CORS configuration.
+ * In production:
+ * - Only explicitly specified origins in CLIENT_URL (comma-delimited) are allowed.
+ * - Wildcard * is disabled by default unless explicitly configured.
+ * - Subdomain matching (e.g. *.pages.dev) only applies if CLIENT_URL explicitly contains *.
+ */
+function isOriginAllowed(origin: string | undefined): boolean {
+  if (!origin) return true; // Server-to-server, health-check or local non-browser tools
+  if (!CLIENT_URL) return false;
+  if (CLIENT_URL === '*') return true;
+
+  const allowedList = CLIENT_URL.split(',').map(s => s.trim().toLowerCase());
+  const originLower = origin.toLowerCase();
+
+  for (const allowed of allowedList) {
+    if (allowed === originLower) {
+      return true;
+    }
+    // Explicit wildcard subdomain matching ONLY (e.g., https://*.pages.dev or *.pages.dev)
+    if (allowed.startsWith('https://*.') || allowed.startsWith('http://*.') || allowed.startsWith('*.')) {
+      const suffix = allowed.replace(/^(https?:\/\/)?\*\./, '.');
+      const originHost = originLower.replace(/^https?:\/\//, '');
+      if (originHost.endsWith(suffix)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+// Create HTTP server with health-check and CORS support
 const server = http.createServer((req, res) => {
-  // Simple CORS headers for HTTP requests
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  const reqOrigin = req.headers.origin as string | undefined;
+
+  if (reqOrigin && isOriginAllowed(reqOrigin)) {
+    res.setHeader('Access-Control-Allow-Origin', reqOrigin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  } else if (!IS_PROD && CLIENT_URL === '*') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -32,9 +73,14 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(
       JSON.stringify({
-        status: 'ok',
-        service: 'uno-multiplayer-server',
+        status: 'healthy',
+        service: 'uno-multiplayer-backend',
+        version: '1.0.0',
+        uptimeSeconds: Math.floor(process.uptime()),
         timestamp: Date.now(),
+        environment: process.env.NODE_ENV || 'production',
+        port: PORT,
+        host: HOST,
       })
     );
     return;
@@ -44,10 +90,16 @@ const server = http.createServer((req, res) => {
   res.end('Not Found');
 });
 
-// Setup Socket.IO
+// Setup Socket.IO with production CORS origin validation
 const io = new Server(server, {
   cors: {
-    origin: CLIENT_URL === '*' ? true : [CLIENT_URL],
+    origin: (origin, callback) => {
+      if (isOriginAllowed(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Origin ${origin} not allowed by CORS.`));
+      }
+    },
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -88,6 +140,11 @@ function broadcastRoom(room: GameRoom) {
     }
   }
 }
+
+// Automatically broadcast to all sockets when a player's round timer expires
+roomManager.setOnTurnTimeoutCallback((room) => {
+  broadcastRoom(room);
+});
 
 io.on('connection', (socket: Socket) => {
   // Middleware check for rate limit
@@ -416,6 +473,6 @@ io.on('connection', (socket: Socket) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`🚀 Authoritative UNO Multiplayer Server listening on port ${PORT}`);
+server.listen(PORT, HOST, () => {
+  console.log(`🚀 Authoritative UNO Multiplayer Server listening on ${HOST}:${PORT}`);
 });

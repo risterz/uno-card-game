@@ -1351,7 +1351,8 @@
    MOBILE RESPONSIVE BREAKPOINT (max-width: 600px)
    ========================================================================== */
 @media (max-width: 600px) {
-  .local-game-container {
+  .local-game-container,
+  .game-container {
     height: auto;
     min-height: calc(100vh - 48px);
     min-height: calc(100dvh - 44px);
@@ -1420,7 +1421,8 @@
   }
 
   /* 2. Arena Layout & Vertical Spacing */
-  .local-game-arena {
+  .local-game-arena,
+  .game-arena {
     padding: 4px 6px clamp(14px, 2vh, 20px) 6px;
     border-radius: 16px;
     border-width: 2px;

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { CardDefinition, CardSize } from '../types/card';
-import { generateCardBackSvg, generateCardSvg } from '../utils/svg-card-generator';
+import { CardThemeId, getCardTheme, useCardTheme } from '../themes/cardThemes';
 import '../styles/cards.css';
 
 export interface CardProps {
   card: CardDefinition;
   size?: CardSize;
+  theme?: CardThemeId;
   isFlipped?: boolean;
   selected?: boolean;
   disabled?: boolean;
@@ -18,6 +19,7 @@ export interface CardProps {
 export const Card: React.FC<CardProps> = ({
   card,
   size = 'md',
+  theme,
   isFlipped: controlledFlipped,
   selected = false,
   disabled = false,
@@ -27,11 +29,14 @@ export const Card: React.FC<CardProps> = ({
   onClick,
 }) => {
   const [internalFlipped, setInternalFlipped] = useState(false);
+  const { currentTheme: globalTheme } = useCardTheme();
+  const activeThemeId = theme || globalTheme;
+  const activeTheme = getCardTheme(activeThemeId);
 
   const isFlipped = controlledFlipped !== undefined ? controlledFlipped : internalFlipped;
 
-  const cardSvgHtml = React.useMemo(() => generateCardSvg(card), [card]);
-  const cardBackSvgHtml = React.useMemo(() => generateCardBackSvg(), []);
+  const cardSvgHtml = React.useMemo(() => activeTheme.generateCardSvg(card), [card, activeTheme]);
+  const cardBackSvgHtml = React.useMemo(() => activeTheme.generateCardBackSvg(), [activeTheme]);
 
   const handleClick = () => {
     if (disabled) return;
@@ -45,10 +50,11 @@ export const Card: React.FC<CardProps> = ({
 
   return (
     <div
-      className={`card-wrapper card-size-${size} ${!interactive ? 'non-interactive' : ''} ${isFlipped ? 'flipped' : ''} ${selected ? 'selected' : ''} ${disabled ? 'disabled' : ''} ${className}`}
+      className={`card-wrapper card-size-${size} theme-${activeThemeId} ${!interactive ? 'non-interactive' : ''} ${isFlipped ? 'flipped' : ''} ${selected ? 'selected' : ''} ${disabled ? 'disabled' : ''} ${className}`}
       data-color={card.color}
       data-value={card.value}
       data-id={card.id}
+      data-theme={activeThemeId}
       onClick={handleClick}
       role="button"
       tabIndex={disabled ? -1 : 0}
