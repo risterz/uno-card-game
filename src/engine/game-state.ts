@@ -42,11 +42,13 @@ export function createInitialGameState(
   const playerCount = Math.max(2, Math.min(5, settings.playerCount));
   const players: Player[] = [];
 
+  const BOT_NAMES = ['Syifa', 'Umairah', 'Harraz'];
+
   for (let i = 0; i < playerCount; i++) {
     const isHuman = settings.gameMode === 'pass_and_play' || i === 0;
     const name = isHuman
       ? (settings.gameMode === 'pass_and_play' ? `Player ${i + 1}` : 'You')
-      : `Bot ${['Nova', 'Orion', 'Luna', 'Sol'][i - 1] || `${i + 1}`}`;
+      : BOT_NAMES[i - 1] || `Bot ${i + 1}`;
 
     players.push({
       id: `p${i + 1}`,
