@@ -33,6 +33,7 @@
   gap: 12px;
   flex-shrink: 0;
   z-index: 20;
+  flex-wrap: wrap;
 }
 
 .game-status-pill {
@@ -1003,6 +1004,7 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
+  flex-shrink: 0;
 }
 
 .local-game-arena {
@@ -1365,6 +1367,58 @@
     --gap-status-to-hand: 16px;
     --arena-pad-top: 4px;
     --arena-pad-bottom: 8px;
+  }
+}
+
+/* ==========================================================================
+   TABLET & LAPTOP HEADER RESPONSIVE BREAKPOINT (max-width: 1024px)
+   ========================================================================== */
+@media (max-width: 1024px) {
+  /* Header & Toolbar: 2-Row Layout preventing text overlap */
+  .game-top-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+  }
+
+  .game-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .game-status-pill {
+    font-size: 12px;
+    gap: 6px;
+    max-width: 75%;
+  }
+
+  .game-controls-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    padding: 2px 0 4px 0;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+
+  .game-controls-group::-webkit-scrollbar {
+    display: none;
+  }
+
+  .game-controls-group .game-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    min-height: 32px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 }
 
