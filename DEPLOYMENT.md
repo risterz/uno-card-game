@@ -1,8 +1,11 @@
 # Production Deployment Guide: UNO Game & Design System
 
-Complete guide for deploying the **UNO Card Game** architecture:
-- **Frontend (SPA)**: [Cloudflare Pages](https://pages.cloudflare.com/)
-- **Backend (Authoritative Multiplayer & WebSocket Server)**: [Render Web Services](https://render.com/)
+## 🚀 Live Production Deployments
+
+- **Frontend (Cloudflare Pages)**: [https://uno-card-game-335.pages.dev](https://uno-card-game-335.pages.dev)
+- **Backend (Render Web Service)**: [https://uno-multiplayer-backend-en4e.onrender.com](https://uno-multiplayer-backend-en4e.onrender.com)
+- **Health Check Endpoint**: [https://uno-multiplayer-backend-en4e.onrender.com/health](https://uno-multiplayer-backend-en4e.onrender.com/health)
+- **GitHub Repository**: [https://github.com/risterz/uno-card-game](https://github.com/risterz/uno-card-game)
 
 ---
 
