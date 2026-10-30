@@ -7,6 +7,7 @@ import { Layers, ShieldCheck, Palette, BookOpen, Gamepad2, Users, Skull } from '
 import { tabContentVariants } from './motion/motion-config';
 import { CardThemeProvider } from './themes/cardThemes';
 import { ThemeSelector } from './components/ThemeSelector';
+import { BgmButton } from './components/BgmButton';
 import './styles/cards.css';
 import './styles/gallery.css';
 
@@ -35,10 +36,15 @@ export const AppContent: React.FC = () => {
               className="brand-logo-img"
             />
           </div>
-          <span className="brand-text">
-            <span className="brand-title-full">UNO Game & Design System</span>
-            <span className="brand-title-short">UNO</span>
-          </span>
+          <div className="brand-text-block">
+            <span className="brand-text">
+              <span className="brand-title-full">UNO Game & Design System</span>
+              <span className="brand-title-short">UNO</span>
+            </span>
+            <span className="brand-creator" data-testid="creator-badge">
+              Made by <strong>risterz</strong>
+            </span>
+          </div>
           <span className="brand-badge">
             <span className="live-dot" />
             Fully Playable
@@ -103,9 +109,12 @@ export const AppContent: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Global Theme Switcher */}
-          <div className="nav-theme-container">
-            <ThemeSelector variant="compact" />
+          {/* Audio BGM & Quick Global Theme Controls */}
+          <div className="nav-actions-wrap">
+            <BgmButton />
+            <div className="nav-theme-container">
+              <ThemeSelector variant="compact" />
+            </div>
           </div>
         </div>
       </nav>
@@ -277,6 +286,29 @@ export const AppContent: React.FC = () => {
           )}
         </AnimatePresence>
       </main>
+
+      {/* Footer Attribution */}
+      <footer className="app-footer">
+        <div className="footer-content">
+          <div className="footer-author-box">
+            <span className="footer-title">UNO Card Game</span>
+            <span className="footer-sep">•</span>
+            <span className="footer-author">Made by <strong>risterz</strong></span>
+          </div>
+          <div className="footer-links">
+            <span className="footer-tagline">Classic & Halloween Editions</span>
+            <span className="footer-sep">•</span>
+            <a
+              href="https://github.com/risterz/uno-card-game"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer-gh-link"
+            >
+              GitHub Repository
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

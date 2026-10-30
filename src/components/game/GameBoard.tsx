@@ -1538,6 +1538,9 @@ export const GameBoard: React.FC = () => {
                     Cancel
                   </button>
                 </div>
+                <div style={{ textAlign: 'center', fontSize: '11px', color: '#64748B', marginTop: '4px' }}>
+                  UNO Card Game &bull; Made by <strong style={{ color: '#38BDF8' }}>risterz</strong>
+                </div>
               </div>
             </motion.div>
           </motion.div>

@@ -288,7 +288,7 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({
           </div>
           <h2 className="lobby-title">Play UNO Online</h2>
           <p className="lobby-subtitle">
-            Play with friends across devices with real-time authoritative synchronization.
+            Play with friends across devices with real-time authoritative synchronization. Made by <strong>risterz</strong>.
           </p>
         </div>
 

@@ -1008,3 +1008,184 @@ body {
   }
 }
 
+/* Creator Branding */
+.brand-text-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.2;
+}
+
+.brand-creator {
+  font-size: 11px;
+  font-weight: 500;
+  color: #94A3B8;
+  letter-spacing: 0.01em;
+}
+
+.brand-creator strong {
+  color: #38BDF8;
+  font-weight: 700;
+}
+
+/* BGM Music Toggle Button */
+.nav-actions-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.bgm-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  color: #94A3B8;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.bgm-toggle-btn:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #E2E8F0;
+  transform: translateY(-1px);
+}
+
+.bgm-toggle-btn.playing {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(56, 189, 248, 0.15));
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #34D399;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+}
+
+.bgm-toggle-btn.muted {
+  opacity: 0.8;
+}
+
+.bgm-icon.active {
+  color: #34D399;
+  animation: pulse-music 2s infinite ease-in-out;
+}
+
+@keyframes pulse-music {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+}
+
+.bgm-waves {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+
+.wave-bar {
+  width: 2px;
+  background: #34D399;
+  border-radius: 1px;
+}
+
+.bar-1 {
+  height: 6px;
+  animation: wave-anim 0.8s infinite ease-in-out alternate;
+}
+
+.bar-2 {
+  height: 12px;
+  animation: wave-anim 0.6s infinite ease-in-out alternate 0.2s;
+}
+
+.bar-3 {
+  height: 8px;
+  animation: wave-anim 0.7s infinite ease-in-out alternate 0.4s;
+}
+
+@keyframes wave-anim {
+  0% { height: 3px; }
+  100% { height: 12px; }
+}
+
+@media (max-width: 580px) {
+  .bgm-text {
+    display: none;
+  }
+  .bgm-toggle-btn {
+    padding: 5px 8px;
+  }
+  .brand-creator {
+    font-size: 10px;
+  }
+}
+
+/* App Footer */
+.app-footer {
+  margin-top: auto;
+  width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 14, 26, 0.85);
+  backdrop-filter: blur(12px);
+  padding: 16px 24px;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 13px;
+  color: #94A3B8;
+}
+
+.footer-author-box,
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.footer-author strong {
+  color: #38BDF8;
+  font-weight: 700;
+}
+
+.footer-sep {
+  opacity: 0.4;
+}
+
+.footer-gh-link {
+  color: #38BDF8;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.footer-gh-link:hover {
+  color: #7DD3FC;
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .footer-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+  .footer-author-box,
+  .footer-links {
+    justify-content: center;
+  }
+}
+
+
