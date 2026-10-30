@@ -1,157 +1,208 @@
-# UNO-Style Browser Card Game & 108-Card Design System
+# 🃏 UNO Online & Local Card Game — Made by risterz
 
-A fully playable, local browser-based UNO-style card game built on a data-driven 108-card vector SVG design system with automated rules, action cards, intelligent AI bots, pass-and-play support, and complete unit test validation.
-
----
-
-## 🎮 Features Implemented
-
-### 1. Game Engine & Official Rules
-- **Turn Flow & Order:** Clockwise and counter-clockwise direction handling with wrap-around indexing.
-- **Playability Validation:** Exact matches by active color, card number/symbol, or Wild card.
-- **Action Cards:**
-  - **Skip:** Next player loses turn.
-  - **Reverse:** In 3+ players, inverts direction. In 2-player games, functions as a Skip.
-  - **Draw Two (+2):** Next player draws 2 cards from draw pile and loses turn.
-  - **Wild:** Universal playability. Active player selects new table color (`Red`, `Blue`, `Green`, `Yellow`).
-  - **Wild Draw Four (+4):** Universal playability. Player selects active color; next player draws 4 cards and loses turn.
-- **Card Drawing & Decision:** If drawn card is playable, player is offered an immediate option to play or pass.
-- **Draw Pile Recycling:** When the draw pile runs out of cards, the discard pile (excluding top card) is automatically shuffled and recycled.
-- **UNO Declaration & Catching:**
-  - Players must shout "UNO!" when holding 1 card.
-  - If a player fails to declare UNO, opponents can click "CATCH UNO!" causing the offender to draw 2 penalty cards.
-- **Game Over & Scoring:** Detects winning player with 0 cards and tallies round score based on opponents' remaining cards (numbers: face value, action cards: 20 pts, wilds: 50 pts).
-
-### 2. Game Modes & AI Opponents
-- **Solo vs AI Bots:** Play against 1 to 3 autonomous bots.
-- **AI Difficulties:**
-  - `Easy`: Random legal plays and occasional missed UNO shouts.
-  - `Medium`: Strategic color matching, hands-based Wild color choice.
-  - `Hard`: Tracks opponent hand counts, saves action attacks (+2, +4, Skip) for vulnerable opponents, catches missed UNO declarations.
-- **Local Pass & Play:** 2 to 4 human players sharing a single device with privacy curtain shields between turns.
-
-### 3. Interactive UI & Audio
-- Uses existing `<Card />` and `<CardBack />` vector SVG components.
-- Responsive hand layout with overlapping cards, playable card indicators, and hover elevation.
-- Wild color selection modal.
-- Active table color glowing indicator and rotating direction wheel.
-- Web Audio API procedural sound effects for card placement, action cards, UNO shouts, and game victory.
-- Live in-game action history log drawer.
+> A full-featured, responsive, multiplayer & single-player UNO-style card game built with React 19, TypeScript, Vite, Tailwind/CSS, and Node.js + Socket.IO. Features the original tournament deck, the exclusive **Halloween Collector's Deck** with 54 unique vector illustrations, real-time multiplayer with 20s turn timers, relaxing custom BGM, and smart AI bots.
 
 ---
 
-## 🗂️ Project Structure
+## 🌐 Live Production Links
+
+| Service | Target URL | Status |
+|---|---|---|
+| 🚀 **Live Play (Cloudflare Pages)** | **[https://uno-card-game-335.pages.dev](https://uno-card-game-335.pages.dev)** | `Production Active` |
+| 🛰️ **Multiplayer Backend (Render)** | **[https://uno-multiplayer-backend-en4e.onrender.com](https://uno-multiplayer-backend-en4e.onrender.com)** | `Online (Node.js/Socket.IO)` |
+| 🩺 **Backend Health Endpoint** | **[https://uno-multiplayer-backend-en4e.onrender.com/health](https://uno-multiplayer-backend-en4e.onrender.com/health)** | `HTTP 200 OK` |
+| 🐙 **GitHub Repository** | **[https://github.com/risterz/uno-card-game](https://github.com/risterz/uno-card-game)** | `Public / Open Source` |
+
+---
+
+## ✨ Highlights & Features
+
+### 1. 🎃 Two Complete Card Themes (Classic + Halloween)
+- **Classic Tournament Deck:** Authentic colors (`#E61938`, `#0066E5`, `#00A852`, `#F5A600`), 108 cards, uniform 240×336 viewBox geometry.
+- **Halloween Collector's Deck:** 54 completely unique hand-crafted vector artworks across 4 dark fantasy families:
+  - 🩸 **Vampire Crimson (Red):** Castle Dracul, gothic coffins, crimson bats, blood roses.
+  - 👻 **Midnight Haunt (Blue):** Sunken phantom galleons, will-o'-wisps, spectral feline spirits, ghost fountains.
+  - 🧙‍♀️ **Witchcraft (Green):** Haunted treants, bubbling cauldrons, potion vials, dark grimoires.
+  - 🎃 **Pumpkin Gold (Yellow):** Carved jack-o'-lanterns, harvest scarecrows, autumn lanterns.
+  - 🔮 **Dark Magic (Wild):** Ancient forbidden tomes with four elemental magical flames.
+- **Instant Live Theme Switcher:** Change themes dynamically mid-game without reloading.
+
+### 2. ⚡ Real-Time Online Multiplayer (Render Backend)
+- **Authoritative Server Architecture:** Game rules, card validation, deck shuffling, and draw piles run on the Node.js backend to prevent tampering.
+- **Private Hand Security:** Players only receive their own card definitions over WebSockets. Opponents only receive obfuscated hand counts.
+- **Room Code Lobby System:** Create or join private 6-character room codes (`ABC123`) or share one-click invite URLs (`?room=XYZ`).
+- **Session Reconnection:** Automatic session recovery preserves your player slot and hand if you disconnect or refresh.
+
+### 3. ⏱️ 20-Second Round Turn Timer (Online Mode)
+- **Strictly Online Only:** Displayed exclusively during active multiplayer matches. Local Solo and Pass & Play remain comfortably untimed.
+- **Real-Time Synchronized Countdown:** Server emits timer sync; the client renders a glowing circular timer pill with pulse animations when time is low.
+- **Automatic Turn Timeout:** If a player is idle for 20 seconds, the server draws a card and advances turn automatically to keep matches fast-paced.
+
+### 4. 🎵 Relaxing Casual BGM & Sound FX
+- **Custom Casual BGM Track:** 104 BPM, cozy Cmaj7-Am7-Fmaj7-G7 chord progression featuring warm marimba plucks, Rhodes electric piano pads, gentle upright bass, and soft lo-fi shakers ([bgm-casual.wav](public/sounds/bgm-casual.wav)).
+- **Interactive Audio Controller:** Top navbar button with animated soundwave visualizer and volume memory (`localStorage`).
+- **Web Audio Sound Effects:** Dedicated sound effects for drawing cards, playing cards, action attacks (+2/+4/Skip/Reverse), shouting UNO, catching opponents, and victory fanfare.
+
+### 5. 🤖 Smart AI Bots & Local Modes
+- **Solo vs AI:** Play against 1 to 3 autonomous bot players with 3 distinct intelligence levels:
+  - `Easy`: Relaxed casual play, occasional missed UNO shouts.
+  - `Medium`: Color-matching strategy, optimal Wild color selection.
+  - `Hard`: Hand-size counting, targeted action attacks against leading players, aggressive UNO catching.
+- **Local Pass & Play:** 2 to 4 human players sharing one screen with animated privacy curtains between turns.
+
+### 6. 📱 100% Mobile & Touch Responsive
+- Optimized for mobile viewports (down to 360px width) with touch ergonomics, fanned card overlapping, smooth horizontal scroll gestures, and compact header controls.
+
+---
+
+## 🏗️ Architecture & Technology Stack
+
+```
+┌─────────────────────────────────────────┐          HTTPS / WSS          ┌─────────────────────────────────────────┐
+│     Cloudflare Pages (Frontend SPA)     │ ◄───────────────────────────► │        Render Web Service (Node)        │
+│  - React 19 + TypeScript 5              │                               │  - Node.js + Express + Socket.IO        │
+│  - Vite Build System                    │                               │  - Authoritative Game Engine            │
+│  - Motion (Framer Motion v12)           │                               │  - 20-Second Round Turn Timers          │
+│  - Web Audio API Sound Engine           │                               │  - Room Manager & Private State Sync    │
+│  - 100% Offline Local Play Support      │                               │  - Zero Client Secret Exposure          │
+└─────────────────────────────────────────┘                               └─────────────────────────────────────────┘
+```
+
+| Area | Technology |
+|---|---|
+| **Frontend Framework** | [React 19](https://react.dev/), [TypeScript 5.8](https://www.typescriptlang.org/) |
+| **Bundler & Tooling** | [Vite 8](https://vite.dev/), [Rolldown](https://rolldown.rs/) |
+| **Animation & Motion** | [Motion (React)](https://motion.dev/) |
+| **Audio** | HTML5 Audio + Web Audio API Procedural Synthesizer Fallback |
+| **Icons** | [Lucide React](https://lucide.dev/) |
+| **Backend Runtime** | [Node.js](https://nodejs.org/) (ESM + TSX) |
+| **Realtime Networking** | [Socket.IO 4](https://socket.io/) (WSS / Long-Polling fallback) |
+| **Hosting & CI/CD** | [Cloudflare Pages](https://pages.cloudflare.com/), [Render](https://render.com/), [GitHub Actions](https://github.com/features/actions) |
+
+---
+
+## 🗂️ Project Directory Map
 
 ```
 uno-card-game/
+├── .github/workflows/
+│   └── deploy.yml              # GitHub Actions CI & Cloudflare deploy workflow
 ├── public/
-│   ├── cards/                 # Static SVG assets for direct HTML <img> loading
-│   └── cards-preview/         # Template preview SVGs
+│   ├── _redirects              # Cloudflare Pages SPA client-side routing fallback
+│   ├── nano-banana-icon.jpg    # Mascot logo & favicon
+│   └── sounds/                 # Pre-rendered 16-bit PCM sound effects & casual BGM
 ├── scripts/
-│   ├── generate-cards.ts      # Deterministic SVG card & back generator
-│   └── validate-deck.ts       # 8-point strict consistency & inventory test suite
+│   ├── generate-cards.ts       # Classic 108-card SVG generator
+│   ├── generate-halloween-cards.ts # Halloween 108-card SVG generator
+│   ├── generate-bgm.cjs        # Casual BGM synthesizer script
+│   ├── validate-deck.ts        # 8-point strict deck inventory validator
+│   ├── validate-card-themes.ts # 8-point theme uniqueness validator
+│   └── verify-live-deployment.cjs # End-to-end multi-client live tester
+├── server/
+│   ├── index.ts                # Authoritative Socket.IO server & HTTP health endpoint
+│   ├── room-manager.ts         # Room lifecycle, timers, session tokens, private view filter
+│   └── __tests__/              # Server test suite (timer, CORS security, multiplayer)
 ├── src/
-│   ├── assets/
-│   │   ├── card-back.svg      # Original obsidian card back asset
-│   │   └── cards/             # 162 exported card SVGs + TypeScript index
+│   ├── assets/cards/           # 162 Classic SVGs + 163 Halloween SVGs
 │   ├── components/
-│   │   ├── Card.tsx           # Reusable interactive flippable card component
-│   │   ├── CardBack.tsx       # Standalone card-back component
-│   │   ├── CardGallery.tsx    # Interactive deck inspector with filters & search
-│   │   └── game/
-│   │       └── GameBoard.tsx  # Interactive game table, opponent pods, player hand
-│   ├── data/
-│   │   └── deck.ts            # Canonical 108-card inventory & deck statistics
-│   ├── engine/
-│   │   ├── types.ts           # Game state, player, log, and settings types
-│   │   ├── rules.ts           # Card playability predicates, direction, scoring
-│   │   ├── game-state.ts      # State machine (play, draw, pass, uno, catch)
-│   │   ├── ai.ts              # AI decision engine & opponent tracking
-│   │   └── __tests__/
-│   │       └── game-engine.test.ts # Vitest suite (20 tests)
-│   ├── styles/
-│   │   ├── cards.css          # Shared card styling, 3D flip, elevations, glow
-│   │   ├── gallery.css        # Application UI & game table styles
-│   │   └── game.css           # Arena table, color ring, opponent pods, modals
-│   ├── types/
-│   │   └── card.ts            # TypeScript interfaces & types
-│   ├── utils/
-│   │   └── svg-card-generator.ts # Pure mathematical vector SVG generator
-│   ├── App.tsx                # Main app with tabs for Game, Gallery, Specs, Rules
-│   └── main.tsx               # React application entry point
-├── package.json
-├── tsconfig.json
-└── vite.config.ts
+│   │   ├── game/GameBoard.tsx  # Local game board, arena felt, opponent pods
+│   │   ├── multiplayer/        # Multiplayer view, room lobby, live arena
+│   │   ├── BgmButton.tsx       # BGM audio button & waveform visualizer
+│   │   └── Card.tsx            # Interactive 3D vector card component
+│   ├── engine/                 # Pure TypeScript UNO rules, AI decision tree, scoring
+│   ├── themes/                 # Theme definitions & registry (Classic, Halloween)
+│   ├── utils/                  # Audio manager, BGM engine, animation tokens
+│   └── App.tsx                 # Root layout, navigation tabs, creator branding, footer
+└── DEPLOYMENT.md               # Detailed production deployment documentation
 ```
 
 ---
 
-## 🚀 Setup & Commands
+## 📋 Standard 108-Card Inventory
 
-All commands are run from `uno-card-game/`:
+Both the **Classic** and **Halloween** decks adhere strictly to the tournament inventory:
 
+| Card Type | Breakdown per Color | Total Cards |
+|---|---|---|
+| **0 Number Card** | 1 per color (Red, Blue, Green, Yellow) | **4** |
+| **1–9 Number Cards** | 2 of each number per color | **72** |
+| **Skip Action** | 2 per color | **8** |
+| **Reverse Action** | 2 per color | **8** |
+| **Draw Two (+2)** | 2 per color | **8** |
+| **Wild** | Universal color change | **4** |
+| **Wild Draw Four (+4)** | Universal color change + 4 card penalty | **4** |
+| **Total Master Inventory** | **Exactly 108 Cards** | **108** |
+
+---
+
+## 🚀 Quickstart & Development
+
+### Prerequisites
+- [Node.js](https://nodejs.org/) v20 or higher
+- npm v10 or higher
+
+### 1. Install Dependencies
 ```bash
-cd uno-card-game
+npm install
+```
 
-# 1. Run automated unit test suite (Vitest)
-npm test
-
-# 2. Run 8-point deck inventory & geometry validation
-npm run validate:deck
-
-# 3. Start authoritative Socket.IO multiplayer backend
-npm run server
-
-# 4. Start local development frontend
+### 2. Start Local Development
+Runs the Vite frontend on `http://localhost:3000` and the multiplayer backend on `http://localhost:4000`:
+```bash
+# Terminal 1: Frontend
 npm run dev
 
-# 5. Run full multi-browser multiplayer integration suite
-node scripts/verify-multiplayer-full.cjs
+# Terminal 2: Multiplayer Backend
+npm run server:dev
+```
 
-# 6. Production build
+### 3. Run Automated Tests
+```bash
+# Run all unit and integration tests (56 tests)
+npm test
+
+# Run 8-point classic deck integrity check
+npm run validate:deck
+
+# Run 8-point Halloween theme uniqueness check
+npm run validate:themes
+```
+
+### 4. Build for Production
+```bash
 npm run build
 ```
 
 ---
 
-## 🌐 Real-Time Online Multiplayer
+## 🚢 Deployment Guide
 
-### Architecture & Security
-- **Authoritative Backend (`server/`):** Node.js Socket.IO server manages canonical game state, deck dealing, turn transitions, and rules enforcement.
-- **Hand Privacy & Zero Leakage:** Opponent card identities are never transmitted over the network. Clients receive sanitized public player metadata with card counts only.
-- **Unpredictable Room Codes:** Cryptographically randomized 6-character room codes (e.g. `HJH28K`) avoiding ambiguous characters.
-- **Shareable Invite Links:** One-click copyable invite URLs (`?room=XYZ`) automatically orient guest players into the target room.
-- **Session Tokens & Auto-Reconnect:** Secure session tokens in `sessionStorage` allow players to recover active matches upon browser refresh or transient disconnects.
-- **Rate-Limiting & Move Validation:** Prevents out-of-turn moves, illegal cards, malformed payloads, or event flooding.
+### Deploy Backend to Render
+1. Create a new **Web Service** on [Render](https://dashboard.render.com/) pointing to this repository.
+2. Configure settings:
+   - **Environment:** `Node`
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
+   - **Health Check Path:** `/health`
+3. Add Environment Variables:
+   - `NODE_ENV`: `production`
+   - `HOST`: `0.0.0.0`
+   - `CLIENT_URL`: `https://uno-card-game-335.pages.dev,https://*.pages.dev,http://localhost:3000`
 
-### Environment Variables
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `VITE_SERVER_URL` | `http://localhost:4000` | Socket.IO server connection URL for frontend |
-| `PORT` | `4000` | Port for the backend Node.js server |
-| `CLIENT_URL` | `*` | Allowed CORS origin for production deployment |
+### Deploy Frontend to Cloudflare Pages
+1. Deploy via Wrangler CLI:
+   ```bash
+   $env:VITE_SERVER_URL="https://uno-multiplayer-backend-en4e.onrender.com"
+   npm run build
+   npx wrangler pages deploy dist --project-name uno-card-game
+   ```
+2. Or connect the repository in the **Cloudflare Dashboard** under **Workers & Pages** → **Create application** → **Pages** → **Connect to Git** with build command `npm run build` and output folder `dist`.
 
-### Deployment Guide
-1. **Frontend (Static Site):**
-   - Host on Render Static Site, Vercel, or Netlify.
-   - Build Command: `npm run build`
-   - Publish Directory: `dist`
-   - Set environment variable `VITE_SERVER_URL` to your production backend URL.
-2. **Backend (Web Service):**
-   - Host on Render Web Service, Railway, or Fly.io.
-   - Build Command: `npm install`
-   - Start Command: `npm run server`
-   - Set `PORT` (e.g. `4000` or assigned by host) and `CLIENT_URL` to frontend production URL.
+---
 
-### Verified vs Unverified Functionality Matrix
-| Feature | Status | Verification Method |
-| :--- | :--- | :--- |
-| Single-Player vs AI Bots (Easy, Medium, Hard) | ✅ Verified | Unit tests + UI manual tests |
-| Local Pass-and-Play (2–4 Players) | ✅ Verified | Unit tests + DOM checks |
-| 108-Card Deck Inventory & SVG Geometry | ✅ Verified | `npm run validate:deck` (8 checks) |
-| Online Room Creation & Joining (2–4 Players) | ✅ Verified | `scripts/verify-multiplayer-full.cjs` |
-| Authoritative Server Turn Transitions & Penalties | ✅ Verified | Multi-session Puppeteer integration test |
-| Opponent Hand Zero-Leakage Security | ✅ Verified | Inspected DOM + network payload in Puppeteer |
-| Session Token Disconnect & Reconnect | ✅ Verified | Automated tab reload test in Puppeteer |
-| Production Build & TypeScript Strict Mode | ✅ Verified | `tsc && vite build` (zero errors) |
+## 👨‍💻 Author & Credits
 
+- **Creator & Developer:** **risterz**
+- **Repository:** [https://github.com/risterz/uno-card-game](https://github.com/risterz/uno-card-game)
+- **Live Game:** [https://uno-card-game-335.pages.dev](https://uno-card-game-335.pages.dev)
+- **License:** MIT License — Open for personal and educational use.
